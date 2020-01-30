@@ -11,6 +11,10 @@ using JLD2
 
 using HDF5
 
+using Printf
+using DataFrames
+using CSV
+
 #inputTrain = readdlm("V4Hemi1Input.txt", ',')
 
 #inputTrain = readdlm("Users/dmrhome/Documents/ClusterSimsNew/BothHemiInput_600s_10sChunks_Sim0/V4BothHemiInput_10sChunk_sim1.txt", ',')
@@ -70,8 +74,8 @@ taui = 10
 			#nsim+=1
 #for iWiring = 1:1
 	iWiring = 1
-	sigma0 = 0.925 # Sigma of OU process. Controls degree of correlation in lateralized inputs.
-		JR = 2.3
+	sigma0 = 0.71 # Sigma of OU process. Controls degree of correlation in lateralized inputs.
+		JR = 1.1
 
 			tic()
 			times,ns,times0,ns0,Ne,Ncells,T,weights,synInputPerNeuronOverTime = simTwoPopHemiInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR)
@@ -120,17 +124,17 @@ iSimRepeat = 1
 
 iWiring = 1
 
-tic()
-for iSimRepeat = 1:250
+start = time()
+for iSimRepeat = 101:300
 
 
-	times,ns,times0,ns0,Ne,Ncells,T,weights,synInputPerNeuronOverTime = simTwoPopHemiInputFreeze_synInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui,weights,sigma0,JR)
-	writecsv("spHemi_JR_2_3_sig00_925_tau0_60_freeze$iWiring($iSimRepeat)_1_27_20.csv",times)
-	writecsv("nsHemi_JR_2_3_sig00_925_tau0_60_freeze$iWiring($iSimRepeat)_1_27_20.csv",ns)
+	times,ns,times0,ns0,Ne_loc,Ncells,T_loc,weights_loc,synInputPerNeuronOverTime = simTwoPopHemiInputFreeze_synInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui,weights,sigma0,JR)
+	CSV.write("spHemi_JR_1_0_sig01_0_tau0_60_freeze$iWiring($iSimRepeat)_1_29_20.csv",DataFrame(times),writeheader=false)
+	CSV.write("nsHemi_JR_1_0_sig01_0_tau0_60_freeze$iWiring($iSimRepeat)_1_29_20.csv",DataFrame(ns'),writeheader=false)
 	#writecsv("weights_JR_3_2_sig00_7_tau0_60_freeze$iWiring($iSimRepeat)_1_20_20.csv",weights)
-	writecsv("sp0_JR_2_3_sig00_925_tau0_60_freeze$iWiring($iSimRepeat)_1_27_20.csv",times0)
-	writecsv("ns0_JR_2_3_sig00_925_tau0_60_freeze$iWiring($iSimRepeat)_1_27_20.csv",ns0)
-	writecsv("synInput_JR_2_3_sig00_925_tau0_60_freeze$iWiring($iSimRepeat)_1_27_20.csv",synInputPerNeuronOverTime)
+	CSV.write("sp0_JR_1_0_sig01_0_tau0_60_freeze$iWiring($iSimRepeat)_1_29_20.csv",DataFrame(times0),writeheader=false)
+	CSV.write("ns0_JR_1_0_sig01_0_tau0_60_freeze$iWiring($iSimRepeat)_1_29_20.csv",DataFrame(ns0'),writeheader=false)
+	CSV.write("synInput_JR_1_0_sig01_0_tau0_60_freeze$iWiring($iSimRepeat)_1_29_20.csv",DataFrame(synInputPerNeuronOverTime),writeheader=false)
 
 	figure(figsize=(4,4))
 	for ci = 1:Ne
@@ -143,14 +147,15 @@ for iSimRepeat = 1:250
 	ylabel("Neuron")
 	xlabel("Time")
 	tight_layout()
-	savefig("PFCRaster_1_27_20_JR_2_3_sig00_925_tau0_60_freeze$iWiring($iSimRepeat).png",dpi=150)
+	savefig("PFCRaster_1_29_20_JR_1_1_sig00_71_tau0_60_freeze$iWiring($iSimRepeat).png",dpi=150)
 	PyPlot.close()
 
 
 
 
 end
-toc()
+elapsed=time()-start
+println(elapsed)
 
 
 
@@ -159,7 +164,7 @@ println("mean excitatory firing rate: ",mean(1000*ns[1:Ne]/T)," Hz")
 println("mean inhibitory firing rate: ",mean(1000*ns[(Ne+1):(Ncells-N0)]/T)," Hz")
 
 #writecsv("spHemi_R2_$nsim.csv",times)
-writecsv("spHemi_RJ2point0_10s_OUsig0_sim38.csv",times)tttttqzx/
+writecsv("spHemi_RJ2point0_10s_OUsig0_sim38.csv",times)
 writecsv("nsHemi_RJ2point0_10s_OUsig0_sim38.csv",ns)
 writecsv("weights_sim38_OUsig0.csv",weights)
 writecsv("sp0_RJ2point0_10s_OUsig0_sim38.csv",times0)
@@ -215,4 +220,4 @@ h5open("synInputH5Test.h5","w") do file
 	write(file,"synInputMat",synInputPerNeuronOverTime)
 end
 
-@load "1_23_20_JR_2_3_sig00_71_tau0_60_init1.jld2"
+@load "1_24_20_JR_1_0_sig00_71_tau0_60_init1.jld2"

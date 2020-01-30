@@ -61,14 +61,14 @@ function simTwoPopHemiInputFreeze_synInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tau
 	thresh = zeros(NRec)
 	tau = zeros(NRec)
 
-	mu[1:Ne] = (muemax-muemin)*rand(Ne) + muemin
-	mu[(Ne+1):(Ncells-N0)] = (muimax-muimin)*rand(Ni) + muimin
+	mu[1:Ne] = (muemax-muemin)*rand(Ne) .+ muemin
+	mu[(Ne+1):(Ncells-N0)] = (muimax-muimin)*rand(Ni) .+ muimin
 
-	thresh[1:Ne] = threshe
-	thresh[(1+Ne):(Ncells-N0)] = threshi
+	thresh[1:Ne] .= threshe
+	thresh[(1+Ne):(Ncells-N0)] .= threshi
 
-	tau[1:Ne] = taue
-	tau[(1+Ne):(Ncells-N0)] = taui
+	tau[1:Ne] .= taue
+	tau[(1+Ne):(Ncells-N0)] .= taui
 
 	tau0 = 60.0
 	mulambda0 = 4.0 / 1000.0;
@@ -123,8 +123,8 @@ function simTwoPopHemiInputFreeze_synInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tau
 			@printf("\r%d%%",round(Int,100*ti/Nsteps))
 		end
 		t = dt*ti
-		forwardInputsE[:] = 0
-		forwardInputsI[:] = 0
+		forwardInputsE[:] .= 0
+		forwardInputsI[:] .= 0
 		#spikingInputs = inputTrains[2,find(inputTrains[1,:] .== t)]
 
 		OUHemi1 = randn();
