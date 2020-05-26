@@ -32,14 +32,14 @@ function simTwoPopHemiInputFreeze_synInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tau
 	#N0pop = 2000
 
 	#constant bias to each neuron type
-	muemin = 1.1
-	muemax = 1.2 # was 1.2
-	#muemin = -1.1
-	#muemax = -1.1
-	#muimin = -1.0 # was 1
-	muimin = 1
+	#muemin = 1.1
+	#muemax = 1.2 # was 1.2
+	muemin = -1.1
+	muemax = -1.1
+	muimin = -0.6 # was 1
+	#muimin = 1
 	#muimax = -1.0 # was 1.05
-	muimax = 1.05 #.05
+	muimax = -0.6 #.05
 
 	vre = 0. #reset voltage
 

@@ -1,3 +1,5 @@
+idxLowActivity=[];
+
 FR_EL_StateA_All(:,idxLowActivity)=[];
 FR_ER_StateA_All(:,idxLowActivity)=[];
 FR_IL_StateA_All(:,idxLowActivity)=[];
