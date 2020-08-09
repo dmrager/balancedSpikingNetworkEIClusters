@@ -6,50 +6,101 @@
 #uncomment the line below and set doplot=true to plot a raster
 using PyPlot
 #using Plots
-
 using JLD2
-
 using HDF5
-
+using Statistics
 using Printf
 using DataFrames
 using CSV
 
-#inputTrain = readdlm("V4Hemi1Input.txt", ',')
 
-#inputTrain = readdlm("Users/dmrhome/Documents/ClusterSimsNew/BothHemiInput_600s_10sChunks_Sim0/V4BothHemiInput_10sChunk_sim1.txt", ',')
+#doplot = true
 
 
-doplot = true
 
-include("simTwoPopHemiInput.jl")
-include("simTwoPopHemiInput_FreezeConnections_synInput.jl")
+struct SimParams
+	T::Int64 #total sim length (ms)
+end
 
-#for nsim = 2:2
+struct NCount
+	Ne::Int64 #Num E neurons, Rec layer
+	Ni::Int64 #Num I neurons, Rec layer
+	N0::Int64 #Num FF neurons (all E)
+end
+
+struct ConnProbs
+	#connection probabilities. pjk is prob of connection from cell type k to cell type j
+	#FF connections
+	pe0::Float64
+	pi0::Float64
+	#Rec connections
+	pee::Float64
+	pei::Float64
+	pie::Float64
+	pii::Float64
+end
+
+
+struct ConnStrength
+	strong::Bool
+	JR::Float64
+end
+
+struct timeConstants
+	# all in ms
+	tauerise::Int64
+	tauedecay::Int64
+	tauirise::Int64
+	tauidecay::Int64
+	taue::Int64
+	taui::Int64
+end
+
+mutable struct OU
+	sigma0::Float64
+	tau0::Float64
+end
+
+taus = timeConstants(1,3,1,2,15,10);
+v4OU = OU()
+
+sysSize = NCount(4000,1000,4000);
+connProbs = ConnProbs(0.2,0.5,0.2,0.5,0.5,0.5);
+
+connStrength = ConnStrength(false,1);
+
+K = sysSize.Ne * connProbs.pee
+
+if connStrength.strong == true
+	connScaling = sqrt(K)
+else
+	connScaling = K * 4.0
+end
+
 
 T = 12000#simulation time (ms)
 
 Ne = 4000
-#Ne = 800
+#Ne = 200
 Ni = 1000
-#Ni = 200
+#Ni = 50
 
-#N0 = 800
+#N0 = 200
 
 N0 = 4000
 
 K = 800 #average number of E->E connections per neuron pee * NE
-#K = 160
+#K = 40
 KI = 500
-#KI = 40
+#KI = 25
 
 Nepop = 2000 #fix to be fxn of Ne
-#Nepop = 400
+#Nepop = 100
 Nipop = 500
-#Nipop = 100
+#Nipop = 25
 N0pop = 2000
 
-#N0pop = 400
+#N0pop = 100
 
 tauerise = 1
 tauedecay = 3
@@ -58,6 +109,8 @@ tauidecay = 2
 
 taue = 15 #membrane time constant for exc. neurons (ms)
 taui = 10
+
+
 
 #inputTrains = readdlm("V4BothHemiInput_10sChunk_sim1.txt", ',')
 
@@ -74,21 +127,37 @@ taui = 10
 			#nsim+=1
 #for iWiring = 1:1
 	iWiring = 1
-	sigma0 = 0.71 # Sigma of OU process. Controls degree of correlation in lateralized inputs.
-		JR = 1.1
+	sigma0 = 0.71# Sigma of OU process. Controls degree of correlation in lateralized inputs.
+	tau0 = 60.
+	JR = 1.0
+
+mue = -1.1
+mui = -1.
+q = 0.75
+
+			include("simTwoPopHemiInputWeakRecurrentCoupling.jl")
+			include("simTwoPopHemiInputNoCoupling.jl")
+			include("simTwoPopHemiInput.jl")
+			include("simTwoPopHemiInput_privateNoise.jl")
+			include("simTwoPopHemiInput_FreezeConnections_synInput.jl")
+
+			Juno.@enter simTwoPopHemiInputNoCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR)
+
+
+			times,ns,times0,ns0,Ne,Ncells,T,weights = simTwoPopHemiInputNoCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR)
 
 			tic()
-			times,ns,times0,ns0,Ne,Ncells,T,weights,synInputPerNeuronOverTime = simTwoPopHemiInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR)
+			times,ns,times0,ns0,Ne,Ncells,T,weights,synInputPerNeuronOverTime,voltageOverTime,privNoiseOverTime = simTwoPopHemiInput_privateNoise(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR)
 			toc()
-			writecsv("spHemi_JR_1_4_sig02_0_tau0_24_init$iWiring.csv",times)
-			writecsv("nsHemi_JR_1_4_sig02_0_tau0_24_init$iWiring.csv",ns)
-			writecsv("weights_JR_1_4_sig02_0_tau0_24_init$iWiring.csv",weights)
-			writecsv("sp0_JR_1_4_sig02_0_tau0_24_init$iWiring.csv",times0)
-			writecsv("ns0_JR_1_4_sig02_0_tau0_24_init$iWiring.csv",ns0)
-			writecsv("meanInput_JR_3_4_sig02_0_tau0_24_init$iWiring.csv",synInputPerNeuronOverTime)
+			writecsv("spHemi_JR_1_6_JEI_1_1_sig01_4_tau0_60_init$iWiring.csv",times)
+			writecsv("nsHemi_JR_1_6_JEI_1_1_sig01_4_tau0_60_init$iWiring.csv",ns)
+			writecsv("weights_JR_1_6_JEI_1_1_sig01_4_tau0_60_init$iWiring.csv",weights)
+			writecsv("sp0_JR_1_6_JEI_1_1_sig01_4_tau0_60_init$iWiring.csv",times0)
+			writecsv("ns0_JR_1_6_JEI_1_1_sig01_4_tau0_60_init$iWiring.csv",ns0)
+			writecsv("meanInput_JR_1_6_JEI_1_1_sig01_4_tau0_60_init$iWiring.csv",synInputPerNeuronOverTime)
 
 			#writecsv("ns0_sim$nsim.csv",ns0)
-			@save "1_25_20_JR_2_3_sig00_71_tau0_60_init2.jld2" K KI N0 N0pop Ncells Ne Nepop Ni Nipop T taue tauedecay tauerise taui tauidecay tauirise weights sigma0 JR
+			@save "7_27_20_WeakRecCouple_Actualsig00_71_tau0_60.jld2" K KI N0 N0pop Ncells Ne Nepop Ni Nipop T taue tauedecay tauerise taui tauidecay tauirise weights sigma0 JR tau0 mue mui q
 			figure(figsize=(4,4))
 			for ci = 1:Ne
 				vals = times[ci,1:ns[ci]]
@@ -100,7 +169,8 @@ taui = 10
 			ylabel("Neuron")
 			xlabel("Time")
 			tight_layout()
-			savefig("PFCRaster_11_27_19_JR_1_4_sig02_0_tau0_60_init5_$iWiring.png",dpi=150)
+			savefig("CheckCheck2.png",dpi=150)
+			#"PFCRaster_5_28_20_JR_1_4_JIE_1_1_sig02_0_tau0_60_freeze1$iWiring.png"
 
 			figure(figsize=(4,4))
 			for ci0 = 1:N0
@@ -113,28 +183,44 @@ taui = 10
 			ylabel("Neuron")
 			xlabel("Time")
 			tight_layout()
-			savefig("PFCRaster_7_22_19_JR_3_2_sig00_7_NoCouple_tau0_60_init$iWiring.png",dpi=150)
+			savefig("InputCheck.png",dpi=150)
 
 
 
 
 #end
+CSV.write("privNoiseOverTime_p1_p8K_sig_1_2.csv",DataFrame(privNoiseOverTime),writeheader=false)
+
+
 
 iSimRepeat = 1
 
 iWiring = 1
 
 start = time()
-for iSimRepeat = 101:300
+for iSimRepeat = 1:20
 
 
 	times,ns,times0,ns0,Ne_loc,Ncells,T_loc,weights_loc,synInputPerNeuronOverTime = simTwoPopHemiInputFreeze_synInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui,weights,sigma0,JR)
-	CSV.write("spHemi_JR_1_0_sig01_0_tau0_60_freeze$iWiring($iSimRepeat)_1_29_20.csv",DataFrame(times),writeheader=false)
-	CSV.write("nsHemi_JR_1_0_sig01_0_tau0_60_freeze$iWiring($iSimRepeat)_1_29_20.csv",DataFrame(ns'),writeheader=false)
+	CSV.write("spHemi_weakRecCouple_Point75_Actualsig00_71_tau0_60_7_28_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(times),writeheader=false)
+	CSV.write("nsHemi_weakRecCouple_Point75_Actualsig00_71_tau0_60_7_28_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(ns'),writeheader=false)
 	#writecsv("weights_JR_3_2_sig00_7_tau0_60_freeze$iWiring($iSimRepeat)_1_20_20.csv",weights)
-	CSV.write("sp0_JR_1_0_sig01_0_tau0_60_freeze$iWiring($iSimRepeat)_1_29_20.csv",DataFrame(times0),writeheader=false)
-	CSV.write("ns0_JR_1_0_sig01_0_tau0_60_freeze$iWiring($iSimRepeat)_1_29_20.csv",DataFrame(ns0'),writeheader=false)
-	CSV.write("synInput_JR_1_0_sig01_0_tau0_60_freeze$iWiring($iSimRepeat)_1_29_20.csv",DataFrame(synInputPerNeuronOverTime),writeheader=false)
+	CSV.write("sp0_weakRecCouple_Point75_Actualsig00_71_tau0_60_7_28_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(times0),writeheader=false)
+	CSV.write("ns0_weakRecCouple_Point75_Actualsig00_71_tau0_60_7_28_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(ns0'),writeheader=false)
+	CSV.write("meanInput_weakRecCouple_Point75_Actualsig00_71_tau0_60_7_28_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(synInputPerNeuronOverTime),writeheader=false)
+
+	#weightsAbs = broadcast(abs,weights);
+
+	#maximum(maximum(weightsAbs,dims=1))
+
+	#weights_1=weights;
+
+
+
+	#CSV.write("gephiWeightsAbs_R_1_0.csv",DataFrame(weightsAbs),writeheader=false)
+
+	#CSV.write("voltage_weakRecCouple_Actualsig00_71_tau0_60_7_27_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(voltageOverTime),writeheader=false)
+
 
 	figure(figsize=(4,4))
 	for ci = 1:Ne
@@ -147,7 +233,7 @@ for iSimRepeat = 101:300
 	ylabel("Neuron")
 	xlabel("Time")
 	tight_layout()
-	savefig("PFCRaster_1_29_20_JR_1_1_sig00_71_tau0_60_freeze$iWiring($iSimRepeat).png",dpi=150)
+	savefig("PFCRaster_7_28_20_weakRecCouple_Point75_Actualsig00_71_tau0_60_freeze$iWiring($iSimRepeat).png",dpi=150)
 	PyPlot.close()
 
 
@@ -156,7 +242,6 @@ for iSimRepeat = 101:300
 end
 elapsed=time()-start
 println(elapsed)
-
 
 
 
@@ -183,7 +268,7 @@ if doplot
 	ylabel("Neuron")
 	xlabel("Time")
 	tight_layout()
-	savefig("RJ2point0_OUInput_lambda0_4_sigma0_0_sim38.png",dpi=150)
+	savefig("uncoupledTest_mue_minus1_mui_minus08_7_20_2020.png",dpi=150)
 
 	figure(figsize=(4,4))
 	for ci0 = 1:N0
@@ -196,17 +281,17 @@ if doplot
 	ylabel("Neuron")
 	xlabel("Time")
 	tight_layout()
-	savefig("OUInput_lambda0_4_sig_1point0.png",dpi=150)
+	savefig("UncouopledTest_7_2020.png",dpi=150)
 
 
 
 
 	println("creating weight matrix plot")
 	figure()
-	pcolormesh(weightsNoCoupleR)
+	pcolormesh(weights)
 	colorbar()
 	tight_layout()
-	savefig("NoCoupling_1_20_20.png",dpi=150)
+	savefig("5PMoreInterHemiEICoupling.png",dpi=150)
 
 	#savefig("weightStatic_R1_$nsim.png",dpi=150)
 end
@@ -216,8 +301,8 @@ end
 
 @save "bothHemi_R1_SimSet0Balance.jld2" K KI N0 N0pop Ncells Ne Nepop Ni Nipop T taue tauedecay tauerise taui tauidecay tauirise weights
 
-h5open("synInputH5Test.h5","w") do file
-	write(file,"synInputMat",synInputPerNeuronOverTime)
+h5open("Weights_7_28_20_weakRecCouplePoint75_Actualsig00_71_tau0_60.h5","w") do file
+	write(file,"weights",weights)
 end
 
-@load "1_24_20_JR_1_0_sig00_71_tau0_60_init1.jld2"
+@load "1_24_20_JR_1_0_sig00_71_tau0_60_init1.
