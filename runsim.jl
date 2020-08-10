@@ -13,6 +13,9 @@ using Printf
 using DataFrames
 using CSV
 using Parameters
+using Dates
+using Random
+using UUIDs
 
 @with_kw struct SimParams
 	T::Int64 #total sim length (ms)
@@ -78,37 +81,37 @@ Ncells = sysSize.Ne + sysSize.Ni + sysSize.N0
 
 
 
-T = 12000#simulation time (ms)
-
-Ne = 4000
-#Ne = 200
-Ni = 1000
-#Ni = 50
-
-#N0 = 200
-
-N0 = 4000
-
-K = 800 #average number of E->E connections per neuron pee * NE
-#K = 40
-KI = 500
-#KI = 25
-
-Nepop = 2000 #fix to be fxn of Ne
-#Nepop = 100
-Nipop = 500
-#Nipop = 25
-N0pop = 2000
-
-#N0pop = 100
-
-tauerise = 1
-tauedecay = 3
-tauirise = 1
-tauidecay = 2
-
-taue = 15 #membrane time constant for exc. neurons (ms)
-taui = 10
+# T = 12000#simulation time (ms)
+#
+# Ne = 4000
+# #Ne = 200
+# Ni = 1000
+# #Ni = 50
+#
+# #N0 = 200
+#
+# N0 = 4000
+#
+# K = 800 #average number of E->E connections per neuron pee * NE
+# #K = 40
+# KI = 500
+# #KI = 25
+#
+# Nepop = 2000 #fix to be fxn of Ne
+# #Nepop = 100
+# Nipop = 500
+# #Nipop = 25
+# N0pop = 2000
+#
+# #N0pop = 100
+#
+# tauerise = 1
+# tauedecay = 3
+# tauirise = 1
+# tauidecay = 2
+#
+# taue = 15 #membrane time constant for exc. neurons (ms)
+# taui = 10
 
 
 
@@ -126,25 +129,82 @@ taui = 10
 		#for iRep = 1:3
 			#nsim+=1
 #for iWiring = 1:1
-	iWiring = 1
-	sigma0 = 0.71# Sigma of OU process. Controls degree of correlation in lateralized inputs.
-	tau0 = 60.
-	JR = 1.0
+# 	iWiring = 1
+# 	sigma0 = 0.71# Sigma of OU process. Controls degree of correlation in lateralized inputs.
+# 	tau0 = 60.
+# 	JR = 1.0
+#
+# mue = -1.1
+# mui = -1.
+# q = 0.75
 
-mue = -1.1
-mui = -1.
-q = 0.75
+include("simTwoPopHemiInputWeakRecurrentCoupling.jl")
+include("simTwoPopHemiInputNoCoupling.jl")
+include("simTwoPopHemiInput.jl")
+include("simTwoPopHemiInput_privateNoise.jl")
+include("simTwoPopHemiInput_FreezeConnections_synInput.jl")
 
-			include("simTwoPopHemiInputWeakRecurrentCoupling.jl")
-			include("simTwoPopHemiInputNoCoupling.jl")
-			include("simTwoPopHemiInput.jl")
-			include("simTwoPopHemiInput_privateNoise.jl")
-			include("simTwoPopHemiInput_FreezeConnections_synInput.jl")
+times,ns,times0,ns0,weights,voltageOverTime,bias,connStrength = simTwoPopHemiInputUnpack_WeakCoupleInit(simParams,sysSize,connProbs,taus,v4OU)
 
-			times,ns,times0,ns0,weights,voltageOverTime,bias,connStrength = simTwoPopHemiInputUnpack_WeakCoupleInit(simParams,sysSize,connProbs,taus,v4OU)
+println("mean excitatory firing rate: ",mean(1000*ns[1:sysSize.Ne]/simParams.T)," Hz")
+println("mean inhibitory firing rate: ",mean(1000*ns[(sysSize.Ne+1):(Ncells-sysSize.N0)]/simParams.T)," Hz")
 
-			println("mean excitatory firing rate: ",mean(1000*ns[1:sysSize.Ne]/simParams.T)," Hz")
-			println("mean inhibitory firing rate: ",mean(1000*ns[(sysSize.Ne+1):(Ncells-sysSize.N0)]/simParams.T)," Hz")
+
+iWiring = string(uuid1(MersenneTwister()))
+
+dateStr = Dates.format(today(),"mm_dd_yyyy")
+
+simSetDir = string(dateString,"_",iWiring)
+mkdir(simSetDir)
+pathString = string(pwd(),"\\",simSetDir,"\\")
+
+
+start = time()
+for iSimRepeat = 1:20
+
+
+	times,ns,times0,ns0,weights_loc,synInputPerNeuronOverTime = simTwoPopHemiInputUnpack_FreezeConnInit(simParams,sysSize,connProbs,connStrength,taus,v4OU,bias,weights)
+	CSV.write(string(pathString,"spHemi_",dateStr,"_freeze",iWiring,"($iSimRepeat).csv"),DataFrame(times),writeheader=false)
+	CSV.write(string(pathString,"nsHemi_",dateStr,"_freeze",iWiring,"($iSimRepeat).csv"),DataFrame(ns'),writeheader=false)
+	#writecsv("weights_JR_3_2_sig00_7_tau0_60_freeze$iWiring($iSimRepeat)_1_20_20.csv",weights)
+	CSV.write(string(pathString,"sp0_",dateStr,"_freeze",iWiring,"($iSimRepeat).csv"),DataFrame(times0),writeheader=false)
+	CSV.write(string(pathString,"ns0_",dateStr,"_freeze",iWiring,"($iSimRepeat).csv"),DataFrame(ns0'),writeheader=false)
+	CSV.write(string(pathString,"meanInput_",dateStr,"_freeze",iWiring,"($iSimRepeat).csv"),DataFrame(synInputPerNeuronOverTime),writeheader=false)
+
+	#weightsAbs = broadcast(abs,weights);
+	#maximum(maximum(weightsAbs,dims=1))
+	#weights_1=weights;
+	#CSV.write("gephiWeightsAbs_R_1_0.csv",DataFrame(weightsAbs),writeheader=false)
+	#CSV.write("voltage_weakRecCouple_Actualsig00_71_tau0_60_7_27_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(voltageOverTime),writeheader=false)
+
+	figure(figsize=(4,4))
+	for ci = 1:sysSize.Ne
+		vals = times[ci,1:ns[ci]]
+		y = ci*ones(length(vals))
+		scatter(vals,y,s=.3,c="k",marker="o",linewidths=0)
+	end
+	xlim(simParams.T/4,simParams.T/2)
+	ylim(0,sysSize.Ne)
+	ylabel("Neuron")
+	xlabel("Time")
+	tight_layout()
+	savefig(string(pathString,dateStr,"_PFCRaster_freeze",iWiring,"($iSimRepeat).png"),dpi=150)
+	PyPlot.close()
+end
+elapsed=time()-start
+println(elapsed)
+
+weightsStr = string(pathString,"weights_",dateStr,"_freeze",iWiring,".h5")
+h5open(weightsStr,"w") do file
+	write(file,"weights",weights)
+end
+
+paramSaveStr = string(pathString,dateStr,"_freeze",iWiring,".jld2")
+@save paramSaveStr simParams,sysSize,connProbs,connStrength,taus,v4OU,bias,weights
+
+
+
+
 
 
 
@@ -162,7 +222,6 @@ q = 0.75
 			writecsv("meanInput_JR_1_6_JEI_1_1_sig01_4_tau0_60_init$iWiring.csv",synInputPerNeuronOverTime)
 
 			#writecsv("ns0_sim$nsim.csv",ns0)
-			@save "7_27_20_WeakRecCouple_Actualsig00_71_tau0_60.jld2" K KI N0 N0pop Ncells Ne Nepop Ni Nipop T taue tauedecay tauerise taui tauidecay tauirise weights sigma0 JR tau0 mue mui q
 			figure(figsize=(4,4))
 			for ci = 1:Ne
 				vals = times[ci,1:ns[ci]]
@@ -198,55 +257,7 @@ CSV.write("privNoiseOverTime_p1_p8K_sig_1_2.csv",DataFrame(privNoiseOverTime),wr
 
 
 
-iSimRepeat = 1
 
-iWiring = 1
-
-start = time()
-for iSimRepeat = 1:20
-
-
-	times,ns,times0,ns0,weights_loc,synInputPerNeuronOverTime = simTwoPopHemiInputUnpack_FreezeConnInit(simParams,sysSize,connProbs,connStrength,taus,v4OU,bias,weights)
-	CSV.write("spHemi_weakRecCouple_Point75_Actualsig00_71_tau0_60_8_10_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(times),writeheader=false)
-	CSV.write("nsHemi_weakRecCouple_Point75_Actualsig00_71_tau0_60_8_10_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(ns'),writeheader=false)
-	#writecsv("weights_JR_3_2_sig00_7_tau0_60_freeze$iWiring($iSimRepeat)_1_20_20.csv",weights)
-	CSV.write("sp0_weakRecCouple_Point75_Actualsig00_71_tau0_60_8_10_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(times0),writeheader=false)
-	CSV.write("ns0_weakRecCouple_Point75_Actualsig00_71_tau0_60_8_10_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(ns0'),writeheader=false)
-	CSV.write("meanInput_weakRecCouple_Point75_Actualsig00_71_tau0_60_8_10_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(synInputPerNeuronOverTime),writeheader=false)
-
-	#weightsAbs = broadcast(abs,weights);
-
-	#maximum(maximum(weightsAbs,dims=1))
-
-	#weights_1=weights;
-
-
-
-	#CSV.write("gephiWeightsAbs_R_1_0.csv",DataFrame(weightsAbs),writeheader=false)
-
-	#CSV.write("voltage_weakRecCouple_Actualsig00_71_tau0_60_7_27_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(voltageOverTime),writeheader=false)
-
-
-	figure(figsize=(4,4))
-	for ci = 1:sysSize.Ne
-		vals = times[ci,1:ns[ci]]
-		y = ci*ones(length(vals))
-		scatter(vals,y,s=.3,c="k",marker="o",linewidths=0)
-	end
-	xlim(simParams.T/4,simParams.T/2)
-	ylim(0,sysSize.Ne)
-	ylabel("Neuron")
-	xlabel("Time")
-	tight_layout()
-	savefig("PFCRaster_8_10_20_weakRecCouple_Point75_Actualsig00_71_tau0_60_freeze$iWiring($iSimRepeat).png",dpi=150)
-	PyPlot.close()
-
-
-
-
-end
-elapsed=time()-start
-println(elapsed)
 
 #writecsv("spHemi_R2_$nsim.csv",times)
 writecsv("spHemi_RJ2point0_10s_OUsig0_sim38.csv",times)
@@ -301,8 +312,5 @@ end
 
 @save "bothHemi_R1_SimSet0Balance.jld2" K KI N0 N0pop Ncells Ne Nepop Ni Nipop T taue tauedecay tauerise taui tauidecay tauirise weights
 
-h5open("Weights_8_9_20_weakRecCouplePoint75_Actualsig00_71_tau0_60.h5","w") do file
-	write(file,"weights",weights)
-end
 
 @load "1_24_20_JR_1_0_sig00_71_tau0_60_init1.
