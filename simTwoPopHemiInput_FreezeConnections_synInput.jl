@@ -1,8 +1,10 @@
-function simTwoPopHemiInputFreeze_synInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui,weights,sigma0, JR)
+function simTwoPopHemiInputFreeze_synInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui,weights,sigma0, JR, bias)
 	println("setting up parameters")
 	#Ne = 4000
 	#Ni = 1000
 	#N0 = 4000 #was 2500
+	@unpack_Bias bias;
+
 	Ncells = Ne + Ni + N0
 	NRec = Ne + Ni
 
@@ -40,11 +42,6 @@ function simTwoPopHemiInputFreeze_synInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tau
 	#muimin = 1
 	#muimax = 1.05 # was 1.05
 	#muimax = -0.6 #.05
-
-	muemin = -1.13 #WAS ONE #-1.4 works
-	muemax = -1.13
-	muimin = -0.8
-	muimax = -0.8 #0.84
 
 	vre = 0. #reset voltage
 
@@ -119,8 +116,6 @@ function simTwoPopHemiInputFreeze_synInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tau
 	NSynapticDownsamp = round(Int,Nsteps/dSampAmount)
 
 	synInputPerNeuronOverTime = zeros(NRec,NSynapticDownsamp)
-
-	sigPriv = 0.1
 
 	println("starting simulation")
 
@@ -222,5 +217,38 @@ function simTwoPopHemiInputFreeze_synInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tau
 
 	cat = 3
 
-	return times,ns,times0,ns0,Ne,Ncells,T,weights,synInputPerNeuronOverTime
+	return times,ns,times0,ns0,weights,synInputPerNeuronOverTime
+end
+
+
+function simTwoPopHemiInputUnpack_FreezeConnInit(simParams,sysSize,connProbs,connStrength,taus,v4OU,bias,weights)
+
+	@unpack_SimParams simParams;
+	@unpack_NCount sysSize;
+	@unpack_ConnProbs connProbs;
+	@unpack_ConnStrength connStrength;
+	@unpack_TimeConstants taus;
+	@unpack_OU v4OU;
+
+	K = Int(Ne * pee)
+	KI = Int(Ni * pii)
+
+	if connStrength.strong == true
+		ffScaling = sqrt(K)
+		recScaling = sqrt(K)
+	else
+		ffScaling = sqrt(K)
+		recScaling = K * q
+	end
+
+	Nepop = Int(Ne/2)
+	Nipop = Int(Ni/2)
+	N0pop = Int(N0/2)
+
+	#Juno.@enter simTwoPopHemiInputWeakRecurrentCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR, q, recScaling, ffScaling, connProbs)
+	times,ns,times0,ns0,weights,synInputPerNeuronOverTime = simTwoPopHemiInputFreeze_synInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui,weights,sigma0, JR, bias)
+
+	return times,ns,times0,ns0,weights,synInputPerNeuronOverTime
+
+
 end

@@ -12,23 +12,19 @@ using Statistics
 using Printf
 using DataFrames
 using CSV
+using Parameters
 
-
-#doplot = true
-
-
-
-struct SimParams
+@with_kw struct SimParams
 	T::Int64 #total sim length (ms)
 end
 
-struct NCount
+@with_kw struct NCount
 	Ne::Int64 #Num E neurons, Rec layer
 	Ni::Int64 #Num I neurons, Rec layer
 	N0::Int64 #Num FF neurons (all E)
 end
 
-struct ConnProbs
+@with_kw struct ConnProbs
 	#connection probabilities. pjk is prob of connection from cell type k to cell type j
 	#FF connections
 	pe0::Float64
@@ -41,12 +37,13 @@ struct ConnProbs
 end
 
 
-struct ConnStrength
+@with_kw struct ConnStrength
 	strong::Bool
 	JR::Float64
+	q::Float64
 end
 
-struct timeConstants
+@with_kw struct TimeConstants
 	# all in ms
 	tauerise::Int64
 	tauedecay::Int64
@@ -54,28 +51,31 @@ struct timeConstants
 	tauidecay::Int64
 	taue::Int64
 	taui::Int64
+	refrac:: Int64
 end
 
-mutable struct OU
+@with_kw struct OU
+	mu0::Float64
 	sigma0::Float64
 	tau0::Float64
 end
 
-taus = timeConstants(1,3,1,2,15,10);
-v4OU = OU()
+@with_kw struct Bias
+	muemin::Float64
+	muemax::Float64
+	muimin::Float64
+	muimax::Float64
+	sigPriv::Float64
+end
 
+simParams = SimParams(12000);
 sysSize = NCount(4000,1000,4000);
 connProbs = ConnProbs(0.2,0.5,0.2,0.5,0.5,0.5);
+taus = TimeConstants(1,3,1,2,15,10,5);
+v4OU = OU(4.0,0.71,60.)
 
-connStrength = ConnStrength(false,1);
+Ncells = sysSize.Ne + sysSize.Ni + sysSize.N0
 
-K = sysSize.Ne * connProbs.pee
-
-if connStrength.strong == true
-	connScaling = sqrt(K)
-else
-	connScaling = K * 4.0
-end
 
 
 T = 12000#simulation time (ms)
@@ -141,10 +141,15 @@ q = 0.75
 			include("simTwoPopHemiInput_privateNoise.jl")
 			include("simTwoPopHemiInput_FreezeConnections_synInput.jl")
 
-			Juno.@enter simTwoPopHemiInputNoCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR)
+			times,ns,times0,ns0,weights,voltageOverTime,bias,connStrength = simTwoPopHemiInputUnpack_WeakCoupleInit(simParams,sysSize,connProbs,taus,v4OU)
+
+			println("mean excitatory firing rate: ",mean(1000*ns[1:sysSize.Ne]/simParams.T)," Hz")
+			println("mean inhibitory firing rate: ",mean(1000*ns[(sysSize.Ne+1):(Ncells-sysSize.N0)]/simParams.T)," Hz")
 
 
-			times,ns,times0,ns0,Ne,Ncells,T,weights = simTwoPopHemiInputNoCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR)
+
+
+			times,ns,times0,ns0,weights,voltageOverTime = simTwoPopHemiInputWeakRecurrentCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR, q)
 
 			tic()
 			times,ns,times0,ns0,Ne,Ncells,T,weights,synInputPerNeuronOverTime,voltageOverTime,privNoiseOverTime = simTwoPopHemiInput_privateNoise(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR)
@@ -201,13 +206,13 @@ start = time()
 for iSimRepeat = 1:20
 
 
-	times,ns,times0,ns0,Ne_loc,Ncells,T_loc,weights_loc,synInputPerNeuronOverTime = simTwoPopHemiInputFreeze_synInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui,weights,sigma0,JR)
-	CSV.write("spHemi_weakRecCouple_Point75_Actualsig00_71_tau0_60_7_28_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(times),writeheader=false)
-	CSV.write("nsHemi_weakRecCouple_Point75_Actualsig00_71_tau0_60_7_28_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(ns'),writeheader=false)
+	times,ns,times0,ns0,weights_loc,synInputPerNeuronOverTime = simTwoPopHemiInputUnpack_FreezeConnInit(simParams,sysSize,connProbs,connStrength,taus,v4OU,bias,weights)
+	CSV.write("spHemi_weakRecCouple_Point75_Actualsig00_71_tau0_60_8_10_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(times),writeheader=false)
+	CSV.write("nsHemi_weakRecCouple_Point75_Actualsig00_71_tau0_60_8_10_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(ns'),writeheader=false)
 	#writecsv("weights_JR_3_2_sig00_7_tau0_60_freeze$iWiring($iSimRepeat)_1_20_20.csv",weights)
-	CSV.write("sp0_weakRecCouple_Point75_Actualsig00_71_tau0_60_7_28_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(times0),writeheader=false)
-	CSV.write("ns0_weakRecCouple_Point75_Actualsig00_71_tau0_60_7_28_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(ns0'),writeheader=false)
-	CSV.write("meanInput_weakRecCouple_Point75_Actualsig00_71_tau0_60_7_28_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(synInputPerNeuronOverTime),writeheader=false)
+	CSV.write("sp0_weakRecCouple_Point75_Actualsig00_71_tau0_60_8_10_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(times0),writeheader=false)
+	CSV.write("ns0_weakRecCouple_Point75_Actualsig00_71_tau0_60_8_10_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(ns0'),writeheader=false)
+	CSV.write("meanInput_weakRecCouple_Point75_Actualsig00_71_tau0_60_8_10_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(synInputPerNeuronOverTime),writeheader=false)
 
 	#weightsAbs = broadcast(abs,weights);
 
@@ -223,17 +228,17 @@ for iSimRepeat = 1:20
 
 
 	figure(figsize=(4,4))
-	for ci = 1:Ne
+	for ci = 1:sysSize.Ne
 		vals = times[ci,1:ns[ci]]
 		y = ci*ones(length(vals))
 		scatter(vals,y,s=.3,c="k",marker="o",linewidths=0)
 	end
-	xlim(T/4,T/2)
-	ylim(0,Ne)
+	xlim(simParams.T/4,simParams.T/2)
+	ylim(0,sysSize.Ne)
 	ylabel("Neuron")
 	xlabel("Time")
 	tight_layout()
-	savefig("PFCRaster_7_28_20_weakRecCouple_Point75_Actualsig00_71_tau0_60_freeze$iWiring($iSimRepeat).png",dpi=150)
+	savefig("PFCRaster_8_10_20_weakRecCouple_Point75_Actualsig00_71_tau0_60_freeze$iWiring($iSimRepeat).png",dpi=150)
 	PyPlot.close()
 
 
@@ -242,11 +247,6 @@ for iSimRepeat = 1:20
 end
 elapsed=time()-start
 println(elapsed)
-
-
-
-println("mean excitatory firing rate: ",mean(1000*ns[1:Ne]/T)," Hz")
-println("mean inhibitory firing rate: ",mean(1000*ns[(Ne+1):(Ncells-N0)]/T)," Hz")
 
 #writecsv("spHemi_R2_$nsim.csv",times)
 writecsv("spHemi_RJ2point0_10s_OUsig0_sim38.csv",times)
@@ -301,7 +301,7 @@ end
 
 @save "bothHemi_R1_SimSet0Balance.jld2" K KI N0 N0pop Ncells Ne Nepop Ni Nipop T taue tauedecay tauerise taui tauidecay tauirise weights
 
-h5open("Weights_7_28_20_weakRecCouplePoint75_Actualsig00_71_tau0_60.h5","w") do file
+h5open("Weights_8_9_20_weakRecCouplePoint75_Actualsig00_71_tau0_60.h5","w") do file
 	write(file,"weights",weights)
 end
 

@@ -2,85 +2,64 @@
 #Copyright (C) 2014 Ashok Litwin-Kumar
 #see README for more information
 
-function simTwoPopHemiInputWeakRecurrentCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR, q)
+
+function simTwoPopHemiInputWeakRecurrentCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR, q, recScaling, ffScaling, connProbs, bias)
+
+	@unpack_Bias bias;
+
 	println("setting up parameters")
 
 	Ncells = Ne + Ni + N0
 	NRec = Ne + Ni
 
-	#connection probabilities
-	pee = .2
-	pei = .5
-	pie = .5
-	pii = .5
-
 	sqrtK = sqrt(K)
-
-	jie = 4. /(taui*(q*K))
-	jei = -16. *1.2 /(taue*(q*K))
-	jii = -16. /(taui*(q*K))
 
 	#set up connection probabilities within and without blocks
 	ratioejee = JR
-	jeeout = 10. /(taue*(q*K))
-	jeein = ratioejee*10. /(taue*(q*K))
+	jeeout = 10. /(taue*recScaling)
+	jeein = ratioejee*jeeout
 
 	#je0 = jeeout * (14./8.) #ratios taken from Chung Chung's paper
 
 
 	ratioijii = JR
-	jii_out = -16. /(taui*(q*K))
-	jii_in= ratioijii*-16. /(taui*(q*K))
+	jii_out = -16. /(taui*recScaling)
+	jii_in= ratioijii*jii_out
 
 	ratiojei = JR
-	jei_out = -16. *1.2 /(taue*(q*K))
-	jei_in = ratiojei*-16. *1.2 /(taue*(q*K))
+	jei_out = -16. *1.2 /(taue*recScaling)
+	jei_in = ratiojei*jei_out
 
 	ratiojie = JR
-	jie_out = 4. /(taui*(q*K))
-	jie_in= ratiojie*4. /(taui*(q*K))
+	jie_out = 4. /(taui*recScaling)
+	jie_in= ratiojie*jie_out
 
 	#ji0 = jie_out * (12./4.)
-	je0 = 10. *3 /(taue*sqrtK)
-	ji0 = 10. /(taui*sqrtK)
+	je0 = 10. *3 /(taue*ffScaling)
+	ji0 = 10. /(taui*ffScaling)
 
 
 
 	ratiopee = 1
-	peeout = K/(Nepop*(ratiopee-1) + Ne)
+	peeout = connProbs.pee
 	peein = ratiopee*peeout
 
 	#pe0 = peeout * 1
-	pe0 = 0.2
+	pe0 = connProbs.pe0
 
 	ratiopii = 1
-	pii_out = KI/(Nipop*(ratiopii-1)+Ni)
+	pii_out = connProbs.pii
 	pii_in = ratiopii * pii_out
 
 	ratiopei = 1
-	pei_out = KI/(Nipop*(ratiopei-1)+Ni) # check which Ks are used for ie and ei
+	pei_out = connProbs.pei
 	pei_in = ratiopei * pei_out
 
 	ratiopie = 1
-	pie_out = KI/(Nipop*(ratiopie-1)+Ni) # check which Ks are used for ie and ei
+	pie_out = connProbs.pie
 	pie_in = ratiopie * pie_out
 
-	#pi0 = pie_out * (0.05/0.03)
-	pi0 = 0.5
-
-	#stimulation
-	#Nstim = [collect(1:2000); collect(4001:4500)] #number of neurons to stimulate (indices 1 to Nstim will be stimulated)
-	Nstim_1 = 2000
-	Nstim_2 = 4500
-	stimstr = 0/taue
-	stimstart = 500
-	stimend = T
-
-	#constant bias to each neuron type
-	muemin = -1.13 #WAS ONE #-1.4 works
-	muemax = -1.13
-	muimin = -0.8
-	muimax = -0.8 # WAS 1.05
+	pi0 = connProbs.pi0
 
 	vre = 0. #reset voltage
 
@@ -193,8 +172,6 @@ function simTwoPopHemiInputWeakRecurrentCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0p
 
 	println("starting simulation")
 
-	sigPriv = 0.1;
-
 
 	#begin main simulation loop
 	for ti = 1:Nsteps
@@ -255,10 +232,6 @@ function simTwoPopHemiInputWeakRecurrentCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0p
 
 				synInput = (xedecay[ci] - xerise[ci])/(tauedecay - tauerise) + (xidecay[ci] - xirise[ci])/(tauidecay - tauirise)
 
-				if (ci < Nstim_1 || ci > Nstim_2) && (t > stimstart) && (t < stimend)
-					synInput += stimstr;
-				end
-
 				if t > (lastSpike[ci] + refrac)  #not in refractory period
 					v[ci] += dt*((1/tau[ci])*(mu[ci]-v[ci]) + synInput) + (sigPriv * sqrt(dt/tau[ci]) * randn());
 
@@ -295,7 +268,41 @@ function simTwoPopHemiInputWeakRecurrentCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0p
 
 	times = times[:,1:maximum(ns)]
 	times0 = times0[:,1:maximum(ns0)]
-	cat = 3
 
-	return times,ns,times0,ns0,Ne,Ncells,T,weights, voltageOverTime
+	return times,ns,times0,ns0,weights,voltageOverTime
+end
+
+function simTwoPopHemiInputUnpack_WeakCoupleInit(simParams,sysSize,connProbs,taus,v4OU)
+
+	connStrength = ConnStrength(false,1,0.75);
+
+	bias = Bias(-1.13,-1.13,-0.8,-0.8,0.1);
+
+	@unpack_SimParams simParams;
+	@unpack_NCount sysSize;
+	@unpack_ConnProbs connProbs;
+	@unpack_ConnStrength connStrength;
+	@unpack_TimeConstants taus;
+	@unpack_OU v4OU;
+
+	K = Int(Ne * pee)
+	KI = Int(Ni * pii)
+
+	if connStrength.strong == true
+		ffScaling = sqrt(K)
+		recScaling = sqrt(K)
+	else
+		ffScaling = sqrt(K)
+		recScaling = K * q
+	end
+
+	Nepop = Int(Ne/2)
+	Nipop = Int(Ni/2)
+	N0pop = Int(N0/2)
+
+	#Juno.@enter simTwoPopHemiInputWeakRecurrentCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR, q, recScaling, ffScaling, connProbs)
+	times,ns,times0,ns0,weights,voltageOverTime = simTwoPopHemiInputWeakRecurrentCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR, q, recScaling, ffScaling, connProbs, bias)
+	return times,ns,times0,ns0,weights,voltageOverTime,bias,connStrength
+
+
 end
