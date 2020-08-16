@@ -1,39 +1,24 @@
 
-#this file is part of litwin-kumar_doiron_cluster_2012
+#this file is part of rager_doiron_assembly_2020 adapted from litwin-kumar_doiron_cluster_2012
 #Copyright (C) 2014 Ashok Litwin-Kumar
-#see README for more information
 
-function simTwoPopHemiInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR)
+function simTwoPopHemiInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, v4OU, JR, bias)
+
+	@unpack_Bias bias;
+	@unpack_OU v4OU;
+
 	println("setting up parameters")
-	#Ne = 4000
-	#Ni = 1000
-	#N0 = 4000 #was 2500
+
 	Ncells = Ne + Ni + N0
 	NRec = Ne + Ni
-	#T = 12000#simulation time (ms)
-	#inputTrainsH1 = readdlm("V4Hemi1Input_Test2.txt", ',')
-	#inputTrains = readdlm("V4BothHemiInput_10sChunk_sim1.txt", ',')
-	#inputTrains = hcat(inputTrainsH1,inputTrainsH2)
-
-
-	#taue = 15 #membrane time constant for exc. neurons (ms)
-	#taui = 10
 
 	#connection probabilities
 	pee = .2
 	pei = .5
 	pie = .5
 	pii = .5
-	#pe0 = 0.1
-	#pi0 = 0.05
 
-	#K = 800 #average number of E->E connections per neuron pee * NE
-	#KI = 500 #pii * NI
 	sqrtK = sqrt(K)
-
-	#Nepop = 2000 #fix to be fxn of Ne
-	#Nipop = 500
-	#N0pop = 2000
 
 	jie = 4. /(taui*sqrtK)
 	jei = -16. *1.2/(taue*sqrtK)
@@ -44,18 +29,15 @@ function simTwoPopHemiInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay
 	jeeout = 10. /(taue*sqrtK)
 	jeein = ratioejee*10. /(taue*sqrtK)
 
-	#je0 = jeeout * (14./8.) #ratios taken from Chung Chung's paper
-
-
 	ratioijii = JR
 	jii_out = -16. /(taui*sqrtK)
 	jii_in= ratioijii*-16. /(taui*sqrtK)
 
-	ratiojei = JR
+	ratiojei = JR * 1.08
 	jei_out = -16. *1.2/(taue*sqrtK)
 	jei_in = ratiojei*-16. *1.2/(taue*sqrtK)
 
-	ratiojie = JR
+	ratiojie = JR #* 1.1
 	jie_out = 4. /(taui*sqrtK)
 	jie_in= ratiojie*4. /(taui*sqrtK)
 
@@ -84,22 +66,16 @@ function simTwoPopHemiInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay
 	pie_out = KI/(Nipop*(ratiopie-1)+Ni) # check which Ks are used for ie and ei
 	pie_in = ratiopie * pie_out
 
-	#pi0 = pie_out * (0.05/0.03)
 	pi0 = 0.5
 
-	#stimulation
-	#Nstim = [collect(1:2000); collect(4001:4500)] #number of neurons to stimulate (indices 1 to Nstim will be stimulated)
-	Nstim_1 = 2000
-	Nstim_2 = 4500
-	stimstr = 0/taue
-	stimstart = 500
-	stimend = T
+	#stimulation -- not using
+	#Nstim_1 = 2000
+	#Nstim_2 = 4500
+	#stimstr = 0/taue
+	#stimstart = 500
+	#stimend = T
 
 	#constant bias to each neuron type
-	muemin = 1.1
-	muemax = 1.2
-	muimin = 1
-	muimax = 1.05
 
 	vre = 0. #reset voltage
 
@@ -108,12 +84,6 @@ function simTwoPopHemiInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay
 
 	dt = .1 #simulation timestep (ms)
 	refrac = 5 #refractory period (ms)
-
-	#synaptic time constants (ms)
-	#tauerise = 1
-	#tauedecay = 3
-	#tauirise = 1
-	#tauidecay = 2
 
 	maxrate = 100 #(Hz) maximum average firing rate.  if the average firing rate across the simulation for any neuron exceeds this value, some of that neuron's spikes will not be saved
 
@@ -130,8 +100,8 @@ function simTwoPopHemiInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay
 	tau[1:Ne] .= taue
 	tau[(1+Ne):(Ncells-N0)] .= taui
 
-	tau0 = 60.0
-	mulambda0 = 4.0 / 1000.0;
+	#tau0 is unpacked now
+	mulambda0 = mulambda0 / 1000.0;
 	sig0 = sigma0 / 1000.0;
 
 	Npop = round(Int,Ne/Nepop)
@@ -181,7 +151,7 @@ function simTwoPopHemiInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay
 		weights[ci,ci] = 0
 	end
 
-	maxTimes = round(Int,maxrate*3*T/1000)
+	maxTimes = round(Int,maxrate*T/1000)
 	times = zeros(NRec,maxTimes)
 	times0 = zeros(N0,maxTimes)
 	ns = zeros(Int,NRec)
@@ -198,8 +168,6 @@ function simTwoPopHemiInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay
 	xidecay = zeros(NRec)
 	lambda0 = zeros(N0)
 
-	#synInputPerNeuronOverTime = zeros(NRec,Nsteps)
-	#meanSynInput = zeros(NRec)
 
 	v = rand(NRec) #membrane voltage
 
@@ -222,7 +190,6 @@ function simTwoPopHemiInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay
 		t = dt*ti
 		forwardInputsE[:] .= 0
 		forwardInputsI[:] .= 0
-		#spikingInputs = inputTrains[2,find(inputTrains[1,:] .== t)]
 
 		OUHemi1 = randn();
 		OUHemi2 = randn();
@@ -230,7 +197,6 @@ function simTwoPopHemiInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay
 		N0Hemi2Start = Int(N0Hemi1End + 1);
 
 		for c0i = 1:N0Hemi1End
-			cat = 3;
 			lambda0[c0i] += dt * (1/tau0) * (mulambda0 - lambda0[c0i]) + sig0 * sqrt(dt/tau0) * OUHemi1;
 			if rand() < lambda0[c0i]*dt
 				#build structure for input spike trains here
@@ -254,13 +220,6 @@ function simTwoPopHemiInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay
 			end
 		end
 
-		###if ~isempty(spikingInputs)
-			###for c0i in spikingInputs
-				###for cinputTarget = 1:NRec
-					###forwardInputsE[cinputTarget] += weights[cinputTarget,(Ne+Ni+Int(c0i))]
-				###end
-			###end
-		###end
 
 
 
@@ -278,9 +237,9 @@ function simTwoPopHemiInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay
 					synInputPerNeuronOverTime[ci,Int(ti/dSampAmount)] = synInput*tau[ci]
 				end
 
-				if (ci < Nstim_1 || ci > Nstim_2) && (t > stimstart) && (t < stimend)
-					synInput += stimstr;
-				end
+				# if (ci < Nstim_1 || ci > Nstim_2) && (t > stimstart) && (t < stimend)
+				# 	synInput += stimstr;
+				# end
 
 				if t > (lastSpike[ci] + refrac)  #not in refractory period
 					v[ci] += dt*((1/tau[ci])*(mu[ci]-v[ci]) + synInput)
@@ -311,11 +270,6 @@ function simTwoPopHemiInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay
 
 	times = times[:,1:maximum(ns)]
 	times0 = times0[:,1:maximum(ns0)]
-	cat = 3
-
-	#for ci = 1:NRec
-		#meanSynInput[ci] = synInputCum[ci]/Nsteps
-	#end
 
 	return times,ns,times0,ns0,Ne,Ncells,T,weights,synInputPerNeuronOverTime
 end

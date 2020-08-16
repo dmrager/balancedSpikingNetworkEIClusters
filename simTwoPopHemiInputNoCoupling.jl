@@ -2,7 +2,9 @@
 #Copyright (C) 2014 Ashok Litwin-Kumar
 #see README for more information
 
-function simTwoPopHemiInputNoCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR)
+function simTwoPopHemiInputNoCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR, bias)
+	@unpack_Bias bias;
+
 	println("setting up parameters")
 
 	Ncells = Ne + Ni + N0
@@ -79,12 +81,6 @@ function simTwoPopHemiInputNoCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise
 	stimstr = 0/taue
 	stimstart = 500
 	stimend = T
-
-	#constant bias to each neuron type
-	muemin = -1.1 #WAS ONE #-1.4 works
-	muemax = -1.1
-	muimin = -1.
-	muimax = -1. # WAS 1.05
 
 	vre = 0. #reset voltage
 
@@ -274,4 +270,46 @@ function simTwoPopHemiInputNoCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise
 	cat = 3
 
 	return times,ns,times0,ns0,Ne,Ncells,T,weights,lambda0_1Step
+end
+
+function simTwoPopHemiInputUnpack_NoCoupleInit(simParams,sysSize,connProbs,taus,v4OU)
+
+	connStrength = ConnStrength(false,0.0,0.0);
+
+	#bias = Bias(-1.3,-1.3,-0.8,-0.8,0.0);
+
+	#old bias from sims in thesis
+	#bias = Bias(-1.1,-1.1,-1.,-1.,0.0);
+
+	#otherwise weak couple
+	bias = Bias(-1.13,-1.13,-0.8,-0.8,0.0);
+
+
+	@unpack_SimParams simParams;
+	@unpack_NCount sysSize;
+	@unpack_ConnProbs connProbs;
+	@unpack_ConnStrength connStrength;
+	@unpack_TimeConstants taus;
+	@unpack_OU v4OU;
+
+	K = Int(Ne * pee)
+	KI = Int(Ni * pii)
+
+	if connStrength.strong == true
+		ffScaling = sqrt(K)
+		recScaling = sqrt(K)
+	else
+		ffScaling = sqrt(K)
+		recScaling = K * q
+	end
+
+	Nepop = Int(Ne/2)
+	Nipop = Int(Ni/2)
+	N0pop = Int(N0/2)
+
+	#Juno.@enter simTwoPopHemiInputWeakRecurrentCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR, q, recScaling, ffScaling, connProbs)
+	times,ns,times0,ns0,Ne,Ncells,T,weights,lambda0_1Step = simTwoPopHemiInputNoCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR, bias)
+	return times,ns,times0,ns0,weights,bias,connStrength
+
+
 end

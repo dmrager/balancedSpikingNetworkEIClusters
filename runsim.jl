@@ -58,7 +58,7 @@ end
 end
 
 @with_kw struct OU
-	mu0::Float64
+	mulambda0::Float64
 	sigma0::Float64
 	tau0::Float64
 end
@@ -75,7 +75,7 @@ simParams = SimParams(12000);
 sysSize = NCount(4000,1000,4000);
 connProbs = ConnProbs(0.2,0.5,0.2,0.5,0.5,0.5);
 taus = TimeConstants(1,3,1,2,15,10,5);
-v4OU = OU(4.0,0.71,60.)
+v4OU = OU(4.0,2.0,60.)
 
 Ncells = sysSize.Ne + sysSize.Ni + sysSize.N0
 
@@ -140,11 +140,15 @@ Ncells = sysSize.Ne + sysSize.Ni + sysSize.N0
 
 include("simTwoPopHemiInputWeakRecurrentCoupling.jl")
 include("simTwoPopHemiInputNoCoupling.jl")
+include("simTwoPopHemiInputUnpack_StrongRec.jl")
 include("simTwoPopHemiInput.jl")
-include("simTwoPopHemiInput_privateNoise.jl")
 include("simTwoPopHemiInput_FreezeConnections_synInput.jl")
 
+times,ns,times0,ns0,weights,bias,connStrength = simTwoPopHemiInputUnpack_NoCoupleInit(simParams,sysSize,connProbs,taus,v4OU)
+
 times,ns,times0,ns0,weights,voltageOverTime,bias,connStrength = simTwoPopHemiInputUnpack_WeakCoupleInit(simParams,sysSize,connProbs,taus,v4OU)
+
+times,ns,times0,ns0,weights,synInputPerNeuronOverTime,bias,connStrength = simTwoPopHemiInputUnpack_StrongRecAsymmClusters(simParams,sysSize,connProbs,taus,v4OU)
 
 println("mean excitatory firing rate: ",mean(1000*ns[1:sysSize.Ne]/simParams.T)," Hz")
 println("mean inhibitory firing rate: ",mean(1000*ns[(sysSize.Ne+1):(Ncells-sysSize.N0)]/simParams.T)," Hz")
@@ -154,7 +158,7 @@ iWiring = string(uuid1(MersenneTwister()))
 
 dateStr = Dates.format(today(),"mm_dd_yyyy")
 
-simSetDir = string(dateString,"_",iWiring)
+simSetDir = string(dateStr,"_",iWiring)
 mkdir(simSetDir)
 pathString = string(pwd(),"\\",simSetDir,"\\")
 
