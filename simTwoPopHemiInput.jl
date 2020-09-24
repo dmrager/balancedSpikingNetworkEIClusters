@@ -2,7 +2,7 @@
 #this file is part of rager_doiron_assembly_2020 adapted from litwin-kumar_doiron_cluster_2012
 #Copyright (C) 2014 Ashok Litwin-Kumar
 
-function simTwoPopHemiInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, v4OU, JR, bias)
+function simTwoPopHemiInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, v4OU, JR, bias, asymmCoeff)
 
 	@unpack_Bias bias;
 	@unpack_OU v4OU;
@@ -33,7 +33,7 @@ function simTwoPopHemiInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay
 	jii_out = -16. /(taui*sqrtK)
 	jii_in= ratioijii*-16. /(taui*sqrtK)
 
-	ratiojei = JR * 1.08
+	ratiojei = JR * asymmCoeff;
 	jei_out = -16. *1.2/(taue*sqrtK)
 	jei_in = ratiojei*-16. *1.2/(taue*sqrtK)
 
@@ -42,7 +42,7 @@ function simTwoPopHemiInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay
 	jie_in= ratiojie*4. /(taui*sqrtK)
 
 	#ji0 = jie_out * (12./4.)
-	je0 = 10. *3/(taue*sqrtK)
+	je0 = 10. *3. /(taue*sqrtK) #WAS 3!!!
 	ji0 = 10. /(taui*sqrtK)
 
 

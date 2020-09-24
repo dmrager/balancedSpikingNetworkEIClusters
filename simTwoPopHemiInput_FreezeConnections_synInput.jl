@@ -1,9 +1,10 @@
 function simTwoPopHemiInputFreeze_synInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui,weights,sigma0, JR, bias)
-	println("setting up parameters")
+	#println("setting up parameters")
 	#Ne = 4000
 	#Ni = 1000
 	#N0 = 4000 #was 2500
 	@unpack_Bias bias;
+	#should unpack v4OU here too!
 
 	Ncells = Ne + Ni + N0
 	NRec = Ne + Ni
@@ -117,12 +118,12 @@ function simTwoPopHemiInputFreeze_synInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tau
 
 	synInputPerNeuronOverTime = zeros(NRec,NSynapticDownsamp)
 
-	println("starting simulation")
+	#println("starting simulation")
 
 	#begin main simulation loop
 	for ti = 1:Nsteps
 		if mod(ti,Nsteps/100) == 1  #print percent complete
-			@printf("\r%d%%",round(Int,100*ti/Nsteps))
+			#@printf("\r%d%%",round(Int,100*ti/Nsteps))
 		end
 		t = dt*ti
 		forwardInputsE[:] .= 0
@@ -210,7 +211,7 @@ function simTwoPopHemiInputFreeze_synInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tau
 		forwardInputsEPrev = copy(forwardInputsE)
 		forwardInputsIPrev = copy(forwardInputsI)
 	end #end loop over time
-	@printf("\r")
+	#@printf("\r")
 
 	times = times[:,1:maximum(ns)]
 	times0 = times0[:,1:maximum(ns0)]

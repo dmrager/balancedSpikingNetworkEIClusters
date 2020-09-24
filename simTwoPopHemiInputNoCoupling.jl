@@ -274,7 +274,7 @@ end
 
 function simTwoPopHemiInputUnpack_NoCoupleInit(simParams,sysSize,connProbs,taus,v4OU)
 
-	connStrength = ConnStrength(false,0.0,0.0);
+	connStrength = ConnStrength(false,0.0,0.0,0.0);
 
 	#bias = Bias(-1.3,-1.3,-0.8,-0.8,0.0);
 

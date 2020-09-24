@@ -1,4 +1,4 @@
-function C_simVC_theoryFigAutogen(X1, Y1, X2, Y2, X3, Y3, X4, Y4, X5, Y5)
+function C_simVC_theoryFigAutogen(X1, Y1, X2, Y2, X3, Y3, X4, Y4, X5, Y5,state)
 %CREATEFIGURE(X1, Y1, X2, Y2, X3, Y3, X4, Y4, X5, Y5)
 %  X1:  vector of x data
 %  Y1:  vector of y data
@@ -23,11 +23,21 @@ hold(axes1,'on');
 % Create plot
 %plot(X1,Y1,'Marker','.','LineStyle','none','Color',[0 0 0]);
 
-plot(X4,Y4,'Marker','.','LineStyle','none',...
-    'Color',[0.270588235294118 0.254901960784314 0.254901960784314]);
 
-% Create plot
-plot(X2,Y2,'Marker','.','LineStyle','none','Color',[0.8 0.8 0.8]);
+if state == 'L'
+
+    plot(X4,Y4,'Marker','.','LineStyle','none',...
+        'Color',[0.270588235294118 0.254901960784314 0.254901960784314]);
+
+    % Create plot
+    plot(X2,Y2,'Marker','.','LineStyle','none','Color',[0.8 0.8 0.8]);
+else
+        % Create plot
+    plot(X2,Y2,'Marker','.','LineStyle','none','Color',[0.8 0.8 0.8]);
+    plot(X4,Y4,'Marker','.','LineStyle','none',...
+        'Color',[0.270588235294118 0.254901960784314 0.254901960784314]);
+end
+    
 
 % Create plot
 plot(X3,Y3,'Marker','.','LineStyle','none',...
@@ -44,12 +54,12 @@ plot(X5,Y5,'LineWidth',2,...
 ylabel('C_{theory}');
 
 % Create xlabel
-xlabel('C_{sims}');
+xlabel('C_{sim}');
 
 % Uncomment the following line to preserve the X-limits of the axes
-% xlim(axes1,[-0.55 0.55]);
+ xlim(axes1,[-0.05 0.08]);
 % Uncomment the following line to preserve the Y-limits of the axes
-% ylim(axes1,[-0.55 0.55]);
+ylim(axes1,[-0.05 0.08]);
 axis(axes1,'square');
 % Set the remaining axes properties
-set(axes1,'FontSize',20,'LineWidth',2,'YTick',[-0.5 0 0.5]);
+set(axes1,'FontSize',20,'LineWidth',2);

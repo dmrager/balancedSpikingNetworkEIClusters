@@ -1,33 +1,28 @@
 
 #this file is part of litwin-kumar_doiron_cluster_2012
-#Copyright (C) 2014 Ashok Litwin-Kumar
-#see README for more information
+#Copyright (C) 2020 Danielle Rager
 
-#uncomment the line below and set doplot=true to plot a raster
-using PyPlot
-#using Plots
-using JLD2
-using HDF5
-using Statistics
-using Printf
-using DataFrames
-using CSV
-using Parameters
-using Dates
-using Random
-using UUIDs
+using Distributed, Hwloc
 
-@with_kw struct SimParams
+addprocs(Hwloc.num_physical_cores()) #adds worker per physical computer core
+
+using Dates, Random, UUIDs, PyPlot, JLD2, HDF5, Statistics, Printf, DataFrames, CSV, Parameters, BenchmarkTools
+
+@everywhere using Distributed, Pkg
+@everywhere Pkg.activate(".")
+@everywhere using PyPlot, JLD2, HDF5, Statistics, Printf, DataFrames, CSV, Parameters
+
+@everywhere @with_kw struct SimParams
 	T::Int64 #total sim length (ms)
 end
 
-@with_kw struct NCount
+@everywhere @with_kw struct NCount
 	Ne::Int64 #Num E neurons, Rec layer
 	Ni::Int64 #Num I neurons, Rec layer
 	N0::Int64 #Num FF neurons (all E)
 end
 
-@with_kw struct ConnProbs
+@everywhere @with_kw struct ConnProbs
 	#connection probabilities. pjk is prob of connection from cell type k to cell type j
 	#FF connections
 	pe0::Float64
@@ -40,13 +35,14 @@ end
 end
 
 
-@with_kw struct ConnStrength
+@everywhere @with_kw struct ConnStrength
 	strong::Bool
 	JR::Float64
 	q::Float64
+	asymmCoeff::Float64
 end
 
-@with_kw struct TimeConstants
+@everywhere @with_kw struct TimeConstants
 	# all in ms
 	tauerise::Int64
 	tauedecay::Int64
@@ -57,13 +53,13 @@ end
 	refrac:: Int64
 end
 
-@with_kw struct OU
+@everywhere @with_kw struct OU
 	mulambda0::Float64
 	sigma0::Float64
 	tau0::Float64
 end
 
-@with_kw struct Bias
+@everywhere @with_kw struct Bias
 	muemin::Float64
 	muemax::Float64
 	muimin::Float64
@@ -71,13 +67,18 @@ end
 	sigPriv::Float64
 end
 
+
 simParams = SimParams(12000);
 sysSize = NCount(4000,1000,4000);
 connProbs = ConnProbs(0.2,0.5,0.2,0.5,0.5,0.5);
 taus = TimeConstants(1,3,1,2,15,10,5);
-v4OU = OU(4.0,2.0,60.)
+#v4OU = OU(4.0,0.71,60.)
+
+v4OU = OU(4.0,0.71,60.)
+
 
 Ncells = sysSize.Ne + sysSize.Ni + sysSize.N0
+
 
 
 
@@ -142,69 +143,25 @@ include("simTwoPopHemiInputWeakRecurrentCoupling.jl")
 include("simTwoPopHemiInputNoCoupling.jl")
 include("simTwoPopHemiInputUnpack_StrongRec.jl")
 include("simTwoPopHemiInput.jl")
-include("simTwoPopHemiInput_FreezeConnections_synInput.jl")
+include("runSimsFrozenGraph.jl")
+include("runSimsFrozenGraphLinResp.jl")
 
 times,ns,times0,ns0,weights,bias,connStrength = simTwoPopHemiInputUnpack_NoCoupleInit(simParams,sysSize,connProbs,taus,v4OU)
 
 times,ns,times0,ns0,weights,voltageOverTime,bias,connStrength = simTwoPopHemiInputUnpack_WeakCoupleInit(simParams,sysSize,connProbs,taus,v4OU)
 
-times,ns,times0,ns0,weights,synInputPerNeuronOverTime,bias,connStrength = simTwoPopHemiInputUnpack_StrongRecAsymmClusters(simParams,sysSize,connProbs,taus,v4OU)
+times,ns,times0,ns0,weights,synInputPerNeuronOverTime,bias,connStrength = simTwoPopHemiInputUnpack_StrongRecSymmClusters(simParams,sysSize,connProbs,taus,v4OU)
+
+times,ns,times0,ns0,weights,synInputPerNeuronOverTime,bias,connStrength,v4OU = simTwoPopHemiInputUnpack_StrongRecAsymmClusters(simParams,sysSize,connProbs,taus,v4OU)
 
 println("mean excitatory firing rate: ",mean(1000*ns[1:sysSize.Ne]/simParams.T)," Hz")
 println("mean inhibitory firing rate: ",mean(1000*ns[(sysSize.Ne+1):(Ncells-sysSize.N0)]/simParams.T)," Hz")
 
+numSims = 200
 
-iWiring = string(uuid1(MersenneTwister()))
+@time runSimsFrozenGraphLinResp(numSims,simParams,sysSize,connProbs,connStrength,taus,v4OU,bias,weights)
 
-dateStr = Dates.format(today(),"mm_dd_yyyy")
-
-simSetDir = string(dateStr,"_",iWiring)
-mkdir(simSetDir)
-pathString = string(pwd(),"\\",simSetDir,"\\")
-
-
-start = time()
-for iSimRepeat = 1:20
-
-
-	times,ns,times0,ns0,weights_loc,synInputPerNeuronOverTime = simTwoPopHemiInputUnpack_FreezeConnInit(simParams,sysSize,connProbs,connStrength,taus,v4OU,bias,weights)
-	CSV.write(string(pathString,"spHemi_",dateStr,"_freeze",iWiring,"($iSimRepeat).csv"),DataFrame(times),writeheader=false)
-	CSV.write(string(pathString,"nsHemi_",dateStr,"_freeze",iWiring,"($iSimRepeat).csv"),DataFrame(ns'),writeheader=false)
-	#writecsv("weights_JR_3_2_sig00_7_tau0_60_freeze$iWiring($iSimRepeat)_1_20_20.csv",weights)
-	CSV.write(string(pathString,"sp0_",dateStr,"_freeze",iWiring,"($iSimRepeat).csv"),DataFrame(times0),writeheader=false)
-	CSV.write(string(pathString,"ns0_",dateStr,"_freeze",iWiring,"($iSimRepeat).csv"),DataFrame(ns0'),writeheader=false)
-	CSV.write(string(pathString,"meanInput_",dateStr,"_freeze",iWiring,"($iSimRepeat).csv"),DataFrame(synInputPerNeuronOverTime),writeheader=false)
-
-	#weightsAbs = broadcast(abs,weights);
-	#maximum(maximum(weightsAbs,dims=1))
-	#weights_1=weights;
-	#CSV.write("gephiWeightsAbs_R_1_0.csv",DataFrame(weightsAbs),writeheader=false)
-	#CSV.write("voltage_weakRecCouple_Actualsig00_71_tau0_60_7_27_2020_freeze$iWiring($iSimRepeat).csv",DataFrame(voltageOverTime),writeheader=false)
-
-	figure(figsize=(4,4))
-	for ci = 1:sysSize.Ne
-		vals = times[ci,1:ns[ci]]
-		y = ci*ones(length(vals))
-		scatter(vals,y,s=.3,c="k",marker="o",linewidths=0)
-	end
-	xlim(simParams.T/4,simParams.T/2)
-	ylim(0,sysSize.Ne)
-	ylabel("Neuron")
-	xlabel("Time")
-	tight_layout()
-	savefig(string(pathString,dateStr,"_PFCRaster_freeze",iWiring,"($iSimRepeat).png"),dpi=150)
-	PyPlot.close()
-end
-elapsed=time()-start
-println(elapsed)
-
-weightsStr = string(pathString,"weights_",dateStr,"_freeze",iWiring,".h5")
-h5open(weightsStr,"w") do file
-	write(file,"weights",weights)
-end
-
-paramSaveStr = string(pathString,dateStr,"_freeze",iWiring,".jld2")
-@save paramSaveStr simParams,sysSize,connProbs,connStrength,taus,v4OU,bias,weights
+@time runSimsFrozenGraph(numSims,simParams,sysSize,connProbs,connStrength,taus,v4OU,bias,weights)
 
 
 
@@ -306,7 +263,7 @@ if doplot
 	pcolormesh(weights)
 	colorbar()
 	tight_layout()
-	savefig("5PMoreInterHemiEICoupling.png",dpi=150)
+	savefig("NoCoupleLinResp.png",dpi=150)
 
 	#savefig("weightStatic_R1_$nsim.png",dpi=150)
 end
@@ -317,4 +274,4 @@ end
 @save "bothHemi_R1_SimSet0Balance.jld2" K KI N0 N0pop Ncells Ne Nepop Ni Nipop T taue tauedecay tauerise taui tauidecay tauirise weights
 
 
-@load "1_24_20_JR_1_0_sig00_71_tau0_60_init1.
+check = @load "E:\\Doiron Lab\\Sim Data\\08_11_2020_244b2a50-db94-11ea-15b9-c9962d3d462d\\08_11_2020_freeze244b2a50-db94-11ea-15b9-c9962d3d462d.jld2"
