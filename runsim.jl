@@ -72,47 +72,11 @@ simParams = SimParams(12000);
 sysSize = NCount(4000,1000,4000);
 connProbs = ConnProbs(0.2,0.5,0.2,0.5,0.5,0.5);
 taus = TimeConstants(1,3,1,2,15,10,5);
-#v4OU = OU(4.0,0.71,60.)
-
 v4OU = OU(4.0,0.71,60.)
 
 
 Ncells = sysSize.Ne + sysSize.Ni + sysSize.N0
 
-
-
-
-# T = 12000#simulation time (ms)
-#
-# Ne = 4000
-# #Ne = 200
-# Ni = 1000
-# #Ni = 50
-#
-# #N0 = 200
-#
-# N0 = 4000
-#
-# K = 800 #average number of E->E connections per neuron pee * NE
-# #K = 40
-# KI = 500
-# #KI = 25
-#
-# Nepop = 2000 #fix to be fxn of Ne
-# #Nepop = 100
-# Nipop = 500
-# #Nipop = 25
-# N0pop = 2000
-#
-# #N0pop = 100
-#
-# tauerise = 1
-# tauedecay = 3
-# tauirise = 1
-# tauidecay = 2
-#
-# taue = 15 #membrane time constant for exc. neurons (ms)
-# taui = 10
 
 
 
