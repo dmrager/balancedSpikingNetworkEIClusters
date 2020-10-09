@@ -121,7 +121,7 @@ everyNeuronGainVectPad = [everyNeuronGainVect zeros(1,4000)];
 %idxPosIntoWeightsPad = [idxPosIntoWeights zeros(1,4000)];
 
 %weightMat = load('weights_NoCouple_sig00_7_1_tau0_60_freeze1(1)_1_20_20.csv');
-weightMat = h5read('Weights_8_9_20_weakRecCouplePoint75_Actualsig00_71_tau0_60.h5','/weights');
+weightMat = h5read('Weights_8_10_20_weakRecCouplePoint75_Actualsig00_71_tau0_60.h5','/weights');
 
 %weightMat = weightMat(1:5000,1:5000);
 %weightMat = weightMat([idxPosIntoWeights,5001:end],[idxPosIntoWeights,5001:end]);

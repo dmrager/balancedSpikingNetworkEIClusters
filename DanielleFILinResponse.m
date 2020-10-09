@@ -13,8 +13,8 @@
  
  switch state
      case 'A'
-         titleString = "State A";
-         varString = "State A";
+         titleString = "State A ";
+         varString = "State A ";
  end
  
  
@@ -27,19 +27,19 @@ for i=1:4
         case 1 
             currentMat = currentEL_StateA_All;
             frMat = FR_EL_StateA_All./(1000/Tw_bin);
-            titleText = "E_L State A";
+            titleText = "E_L State A ";
             gainIndsForWeightMat = positiveSetEL;
             knot = -0.53;
         case 3
             currentMat = currentIL_StateA_All;
             frMat = FR_IL_StateA_All./(1000/Tw_bin);
-            titleText = "I_L State A";
+            titleText = "I_L State A ";
             gainIndsForWeightMat = positiveSetIL;
             knot = -0.2;
         case 2 
             currentMat = currentER_StateA_All;
             frMat = FR_ER_StateA_All./(1000/Tw_bin);
-            titleText = "E_R State A";
+            titleText = "E_R State A ";
             gainIndsForWeightMat = positiveSetER;
             knot = -0.41;
 
@@ -47,7 +47,7 @@ for i=1:4
         case 4
             currentMat = currentIR_StateA_All;
             frMat = FR_IR_StateA_All./(1000/Tw_bin);
-            titleText = "I_R State A";
+            titleText = "I_R State A ";
             gainIndsForWeightMat = positiveSetIR;
             knot = -0.24;
 
@@ -181,7 +181,15 @@ everyNeuronGainVectPad = [everyNeuronGainVect zeros(1,4000)];
 %idxPosIntoWeightsPad = [idxPosIntoWeights zeros(1,4000)];
 
 %weightMat = load('weights_NoCouple_sig00_7_1_tau0_60_freeze1(1)_1_20_20.csv');
-weightMat = h5read('Weights_1_24_20_JR_1_0_sig00_71_tau0_60_Freeze1.h5','/weights');
+%weightMat = h5read('Weights_1_24_20_JR_1_0_sig00_71_tau0_60_Freeze1.h5','/weights');
+%weightMat = h5read('weights_08_11_2020_freezed798e1be-dbac-11ea-06c2-5928c007ab59.h5','/weights');
+weightMat = h5read('weights_08_11_2020_freeze244b2a50-db94-11ea-15b9-c9962d3d462d.h5','/weights');
+
+%weightMat = h5read('Weights_1_24_20_JR_1_0_sig00_71_tau0_60_Freeze1.h5','/weights');
+
+
+
+
 
 %weightMat = weightMat(1:5000,1:5000);
 %weightMat = weightMat([idxPosIntoWeights,5001:end],[idxPosIntoWeights,5001:end]);
@@ -196,9 +204,9 @@ weightMatInput = weightMat(1:5000,5001:end);
  for i = 1:5000%length(idxPosIntoWeights) %Pad
      for j=1:5000%length(idxPosIntoWeights) %Pad
          if i < 4001
-            synScale = 0.3;
+            synScale = 0.18;
          else
-            synScale = 0.15;
+            synScale = 0.1;
          end
          GainMat(i,j)=weightMatRecurrent(i,j)*everyNeuronGainVect(i)*synScale; 
          if j < (size(weightMatInput,2) + 1)
@@ -231,7 +239,7 @@ covInTheoryFull = blkdiag(covInTheoryBlock,covInTheoryBlock);
 %blockIL = ones(500,2000);
 %blockIR = ones(500,2000);
 
-covSimState = covStateA;
+covSimState = covStateA  ;
 
 covY0 = GainMatInput*covInTheoryFull*GainMatInput';
 %covY0 = GainMatInput*covInput*GainMatInput';
