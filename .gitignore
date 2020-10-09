@@ -1,0 +1,9 @@
+# ignore all kinds of files
+*
+# except Julia files and Matlab files
+!**.jl
+!*.m
+!*.gitignore
+!Julia/
+!Matlab/
+
