@@ -121,7 +121,7 @@ times,ns,times0,ns0,weights,synInputPerNeuronOverTime,bias,connStrength,v4OU = s
 println("mean excitatory firing rate: ",mean(1000*ns[1:sysSize.Ne]/simParams.T)," Hz")
 println("mean inhibitory firing rate: ",mean(1000*ns[(sysSize.Ne+1):(Ncells-sysSize.N0)]/simParams.T)," Hz")
 
-numSims = 200
+numSims = 5
 
 @time runSimsFrozenGraphLinResp(numSims,simParams,sysSize,connProbs,connStrength,taus,v4OU,bias,weights)
 
@@ -239,3 +239,6 @@ end
 
 
 check = @load "E:\\Doiron Lab\\Sim Data\\08_11_2020_244b2a50-db94-11ea-15b9-c9962d3d462d\\08_11_2020_freeze244b2a50-db94-11ea-15b9-c9962d3d462d.jld2"
+
+
+check = @load "..\\09_15_2020_freezed5a16b30-f70e-11ea-22f1-5b042a6a80b1.jld2"

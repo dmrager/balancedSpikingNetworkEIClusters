@@ -5,8 +5,9 @@ function runSimsFrozenGraph(numSims,simParams,sysSize,connProbs,connStrength,tau
 	dateStr = Dates.format(today(),"mm_dd_yyyy")
 
 	simSetDir = string(dateStr,"_",iWiring)
-	mkdir(simSetDir)
-	pathString = string(pwd(),"\\",simSetDir,"\\")
+	stringMkDir = string("..\\",simSetDir)
+	mkdir(stringMkDir)
+	pathString = string("..\\",simSetDir,"\\")
 
 	include("simTwoPopHemiInput_FreezeConnections_synInput.jl")
 	@everywhere include("simTwoPopHemiInput_FreezeConnections_synInput.jl")
