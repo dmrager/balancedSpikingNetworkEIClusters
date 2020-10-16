@@ -42,7 +42,7 @@ function simTwoPopHemiInput(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay
 	jie_in= ratiojie*4. /(taui*sqrtK)
 
 	#ji0 = jie_out * (12./4.)
-	je0 = 10. *3. /(taue*sqrtK) #WAS 3!!! #Change to 3.2 for lin resp!!
+	je0 = 10. *3.2 /(taue*sqrtK) #WAS 3!!! #Change to 3.2 for lin resp!!
 	ji0 = 10. /(taui*sqrtK)
 
 

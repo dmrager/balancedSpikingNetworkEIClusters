@@ -2,13 +2,15 @@ function simTwoPopHemiInputUnpack_StrongRecSymmClusters(simParams,sysSize,connPr
 
 	#connStrength = ConnStrength(true,2.3,0.0,1.0);
 
-	connStrength = ConnStrength(true,1.25,0.0,1.0);
+	connStrength = ConnStrength(true,1.5,0.0,1.0);
 
 
 	#bias = Bias(1.0,1.1,1,1.05,0.05); #linn response segment R=1.25 **w/ J0 connections 3.2 instead of 3!!!
 
+	bias = Bias(1.04,1.14,1,1.05,0.05);
 
-	bias = Bias(1.1,1.1,0.9,0.95,0.0); #works for FA
+
+	#bias = Bias(1.1,1.1,0.9,0.95,0.0); #works for FA
 
 
 	@unpack_SimParams simParams;
