@@ -1,5 +1,4 @@
 
-#this file is part of litwin-kumar_doiron_cluster_2012
 #Copyright (C) 2020 Danielle Rager
 
 using Distributed, Hwloc
