@@ -81,6 +81,7 @@ include("simTwoPopHemiInputWeakRecurrentCoupling.jl")
 include("simTwoPopHemiInputNoCoupling.jl")
 include("simTwoPopHemiInputUnpack_StrongRec.jl")
 include("simTwoPopHemiInput.jl")
+include("simTwoPopHemiInput_FreezeConnections_synInput.jl")
 include("runSimsFrozenGraph.jl")
 include("runSimsFrozenGraphLinResp.jl")
 
@@ -95,7 +96,7 @@ times,ns,times0,ns0,weights,synInputPerNeuronOverTime,bias,connStrength,v4OU = s
 println("mean excitatory firing rate: ",mean(1000*ns[1:sysSize.Ne]/simParams.T)," Hz")
 println("mean inhibitory firing rate: ",mean(1000*ns[(sysSize.Ne+1):(Ncells-sysSize.N0)]/simParams.T)," Hz")
 
-numSims = 250
+numSims = 50
 
 @time runSimsFrozenGraphLinResp(numSims,simParams,sysSize,connProbs,connStrength,taus,v4OU,bias,weights)
 

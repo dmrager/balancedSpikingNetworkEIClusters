@@ -113,7 +113,17 @@ everyNeuronGainVectPad = [everyNeuronGainVect zeros(1,4000)];
 %weightMat = load('weights_NoCouple_sig00_7_1_tau0_60_freeze1(1)_1_20_20.csv');
 %weightMat = h5read('Weights_1_24_20_JR_1_0_sig00_71_tau0_60_Freeze1.h5','/weights');
 %weightMat = h5read('weights_08_11_2020_freezed798e1be-dbac-11ea-06c2-5928c007ab59.h5','/weights');
-weightMat = h5read('weights_09_08_2020_freeze9b7e1ae0-f1bc-11ea-021c-5b6442fa541d.h5','/weights');
+%weightMat = h5read('weights_09_08_2020_freeze9b7e1ae0-f1bc-11ea-021c-5b6442fa541d.h5','/weights');
+
+weightMatStr = 'weights_.*.h5';
+fnamesH5 = dir(fullfile(pwd,'*.h5'));
+fnamesH5 = {fnamesH5.name}.';
+FIND_H5 = @(str)cellfun(@(c)~isempty(c),regexp(fnamesH5,str,'once'));
+fnames_subsetWeight = fnamesH5(FIND_H5(weightMatStr));
+
+weightMat = h5read(fnames_subsetWeight{1},'/weights');
+
+
 
 %weightMat = h5read('Weights_1_24_20_JR_1_0_sig00_71_tau0_60_Freeze1.h5','/weights');
 

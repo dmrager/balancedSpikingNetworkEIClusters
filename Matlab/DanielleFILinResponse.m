@@ -1,4 +1,4 @@
-% Fit the ploynomial FI curve
+%% Fit the ploynomial FI curve
 
 % pmu is p(mu), fitted FI curve as function of mu_sim
 % Replot pmu_test = pmu to check
@@ -13,8 +13,8 @@
  
  switch state
      case 'A'
-         titleString = "State A ";
-         varString = "State A ";
+         titleString = "State A";
+         varString = "State A";
  end
  
  
@@ -27,29 +27,25 @@ for i=1:4
         case 1 
             currentMat = currentEL_StateA_All;
             frMat = FR_EL_StateA_All./(1000/Tw_bin);
-            titleText = "E_L State A ";
+            titleText = "E_L State A";
             gainIndsForWeightMat = positiveSetEL;
-            knot = -0.53;
         case 3
             currentMat = currentIL_StateA_All;
             frMat = FR_IL_StateA_All./(1000/Tw_bin);
-            titleText = "I_L State A ";
+            titleText = "I_L State A";
             gainIndsForWeightMat = positiveSetIL;
-            knot = -0.2;
         case 2 
             currentMat = currentER_StateA_All;
             frMat = FR_ER_StateA_All./(1000/Tw_bin);
-            titleText = "E_R State A ";
+            titleText = "E_R State A";
             gainIndsForWeightMat = positiveSetER;
-            knot = -0.41;
 
             
         case 4
             currentMat = currentIR_StateA_All;
             frMat = FR_IR_StateA_All./(1000/Tw_bin);
-            titleText = "I_R State A ";
+            titleText = "I_R State A";
             gainIndsForWeightMat = positiveSetIR;
-            knot = -0.24;
 
     end
             
@@ -58,30 +54,22 @@ for i=1:4
     rates_sim = mean(frMat');
 
 
-
-        
-    p_mu_1 = polyfit(mu_sim(mu_sim <= knot),rates_sim(mu_sim <= knot),2); 
-    pmu_1 = polyval(p_mu_1,mu_sim(mu_sim <= knot));
-    p_mu_2 = polyfit(mu_sim(mu_sim > knot),rates_sim(mu_sim > knot),1); 
-    pmu_2 = polyval(p_mu_2,mu_sim(mu_sim > knot));
-        
-        
-        
-        
-        
-    
-
+    %p_mu = polyfit(mu_sim,rates_sim,7); 
+    %pmu = polyval(p_mu,mu_sim);
     
     
     set(0,'CurrentFigure',FIFig);
     subplot(2,2,i);
+    
+    slm = slmengine(mu_sim,rates_sim,'plot','off','knots',3,'increasing','on');
+    pmu = slmeval(mu_sim,slm);
+    
+
     %figure;
     %scatterhist(mu_sim,rates_sim,'Kernel','on','Location','NorthWest','Direction','out','Color','k','LineStyle',{'-'},'LineWidth',2,'Marker','.','MarkerSize',6);
     plot(mu_sim,rates_sim,'.k');
     hold on
-    plot(mu_sim(mu_sim <= knot),pmu_1,'r.')
-    hold on
-    plot(mu_sim(mu_sim > knot),pmu_2,'r.')
+    plot(mu_sim,pmu,'r.')
     title(titleText);
     xlabel('I');
     ylabel('F');
@@ -95,77 +83,34 @@ for i=1:4
 
 
 
-
+dp_test = slmeval(mu_sim,slm,1);
 
 % check pmu 
-pmu_test_below = zeros(1,length(mu_sim(mu_sim <= knot)));
-dp_test_below = zeros(1,length(mu_sim(mu_sim <= knot)));
-pmu_test_above = zeros(1,length(mu_sim(mu_sim > knot)));
-dp_test_above = zeros(1,length(mu_sim(mu_sim > knot)));
-mu_sim_below = mu_sim(mu_sim <= knot);
-mu_sim_above = mu_sim(mu_sim > knot);
-
-dp_test = zeros(1,length(mu_sim));
-
-
-for k = 1:length(mu_sim(mu_sim <= knot))
-    pmu_test_below(k) = Peval(mu_sim_below(k),p_mu_1,3);
-    dp_test_below(k) = dPdx(mu_sim_below(k),p_mu_1,3);
-end
-
-for k = 1:length(mu_sim(mu_sim > knot))
-    pmu_test_above(k) = Peval(mu_sim_above(k),p_mu_2,2);
-    dp_test_above(k) = dPdx(mu_sim_above(k),p_mu_2,2);
-end
+% pmu_test = zeros(1,length(mu_sim));
+% dp_test = zeros(1,length(mu_sim));
+% for k = 1:length(mu_sim)
+%     pmu_test(k) = Peval(mu_sim(k),p_mu);
+%     dp_test(k) = dPdx(mu_sim(k),p_mu);
+% end
 
 %figure;
 %plot(mu_sim,pmu_test,'g.')
 %xlabel('I');
 %ylabel('plotfitResult');
 
-%     if i<3
-%         [B,I]=sort(mu_sim,'descend');
-%         dp_test(I(1:8))=dp_test(I(9));
-%         [B,I]=sort(mu_sim,'ascend');
-%         dp_test(I(1:6))=dp_test(I(7));
-%     end
-%     
-
-    
-
-dp_test(mu_sim <= knot)=dp_test_below;
-dp_test(mu_sim > knot)=dp_test_above;
-
-%     if i==3
-%         %checkBadFI = (mu_sim < -0.64) + (rates_sim < 0.1);
-%         %dp_test(checkBadFI==2)=0;
-%         [B,I]=sort(mu_sim,'descend');
-%         dp_test(I(1:4))=dp_test(I(5));
-%     end
-    
-    
- [B,I]=sort(mu_sim,'ascend');
- dp_test(I(1:2))=dp_test(I(3));   
- checkBadFI = (mu_sim > -0.8) + (rates_sim < 0.01);
- dp_test(checkBadFI==2)=0;
- checkNoFire = rates_sim == 0;
- dp_test(checkNoFire)=0;
-
-
+%checkBadFI = (mu_sim > -0.8) + (rates_sim < 0.2);
+%dp_test(checkBadFI==2)=0;
 
 % plot gain as function of mu
 set(0,'CurrentFigure',gainFig);
 subplot(2,2,i);
-%plot(mu_sim_below,dp_test_below,'.')
-%hold on;
-plot(mu_sim,dp_test,'.');
+plot(mu_sim,dp_test,'.')
 title(titleText);
 xlabel('I');
 ylabel('gain');
 
 
 
-cat = 3;
 
 everyNeuronGainVect = [everyNeuronGainVect dp_test];
 
@@ -181,19 +126,19 @@ everyNeuronGainVectPad = [everyNeuronGainVect zeros(1,4000)];
 %idxPosIntoWeightsPad = [idxPosIntoWeights zeros(1,4000)];
 
 %weightMat = load('weights_NoCouple_sig00_7_1_tau0_60_freeze1(1)_1_20_20.csv');
-%weightMat = h5read('Weights_1_24_20_JR_1_0_sig00_71_tau0_60_Freeze1.h5','/weights');
-%weightMat = h5read('weights_08_11_2020_freezed798e1be-dbac-11ea-06c2-5928c007ab59.h5','/weights');
-weightMat = h5read('weights_08_11_2020_freeze244b2a50-db94-11ea-15b9-c9962d3d462d.h5','/weights');
+%weightMat = h5read('weights_09_08_2020_freeze8a1ed1d0-f1bd-11ea-03cb-3d2ca16203c0.h5','/weights');
 
-%weightMat = h5read('Weights_1_24_20_JR_1_0_sig00_71_tau0_60_Freeze1.h5','/weights');
+weightMatStr = 'weights_.*.h5';
+fnamesH5 = dir(fullfile(currentDir,'*.h5'));
+fnamesH5 = {fnamesH5.name}.';
+FIND_H5 = @(str)cellfun(@(c)~isempty(c),regexp(fnamesH5,str,'once'));
+fnames_subsetWeight = fnamesH5(FIND_H5(weightMatStr));
 
-
-
-
+weightMat = h5read(fnames_subsetWeight{1},'/weights');
 
 %weightMat = weightMat(1:5000,1:5000);
 %weightMat = weightMat([idxPosIntoWeights,5001:end],[idxPosIntoWeights,5001:end]);
-
+%hjhjk
 weightMatRecurrent = weightMat(1:5000,1:5000);
 %weightMat = weightMat(idxPosIntoWeights,idxPosIntoWeights);
 
@@ -204,9 +149,9 @@ weightMatInput = weightMat(1:5000,5001:end);
  for i = 1:5000%length(idxPosIntoWeights) %Pad
      for j=1:5000%length(idxPosIntoWeights) %Pad
          if i < 4001
-            synScale = 0.18;
+            synScale = 0.27; %0.25;
          else
-            synScale = 0.1;
+            synScale = 0.15; %0.15;
          end
          GainMat(i,j)=weightMatRecurrent(i,j)*everyNeuronGainVect(i)*synScale; 
          if j < (size(weightMatInput,2) + 1)
@@ -239,12 +184,12 @@ covInTheoryFull = blkdiag(covInTheoryBlock,covInTheoryBlock);
 %blockIL = ones(500,2000);
 %blockIR = ones(500,2000);
 
-covSimState = covStateA  ;
+covSimState = covStateA;
 
 covY0 = GainMatInput*covInTheoryFull*GainMatInput';
 %covY0 = GainMatInput*covInput*GainMatInput';
 
-covY0VarReplacement = covY0 + diag(diagCovY0 - diag(covY0));
+covY0VarReplacement = covY0 + diag(diag(covSimState)- diag(covY0));
 
  figure;
  subplot(2,2,2);
@@ -262,7 +207,7 @@ covY0VarReplacement = covY0 + diag(diagCovY0 - diag(covY0));
 
 
 covY = inv(eye(5000)-GainMat) * covY0VarReplacement * inv(eye(5000)-GainMat');
-covY = covY + diag(NaN(size(covY,1),1) - diag(covY));
+%covY = covY + diag(NaN(size(covY,1),1) - diag(covY));
 
 
 %covEst4 = inv(eye(5000)-GainMat)*cov(V4Block)
@@ -435,39 +380,34 @@ title('ER:EL Sim Black Theory Red')
 
 figure;
 subplot(2,2,1);
-[n,x] = hist2Stair(perEr_EL_EL,[-10:0.05:10],'k');
+[n,x] = hist2Stair(perEr_EL_EL,[-5:0.05:5],'k');
 yLims = get(gca,'YLim');
 hold on;
 plot([nanmean(perEr_EL_EL) nanmean(perEr_EL_EL)],[0 yLims(2)],'k--', 'linewidth',3);
 title('EL:EL Error')
-xlim([-5 5])
 
 subplot(2,2,2);
-[n,x] = hist2Stair(perEr_ER_ER,[-10:0.05:10],'k');
+[n,x] = hist2Stair(perEr_ER_ER,[-5:0.05:5],'k');
 yLims = get(gca,'YLim');
 hold on;
 plot([nanmean(perEr_ER_ER) nanmean(perEr_ER_ER)],[0 yLims(2)],'k--', 'linewidth',3);
 title('ER:ER Error')
-xlim([-5 5])
-
 
 
 subplot(2,2,3);
-[n,x] = hist2Stair(perEr_IL_IL,[-10:0.25:10],'k');
+[n,x] = hist2Stair(perEr_IL_IL,[-5:0.05:5],'k');
 yLims = get(gca,'YLim');
 hold on;
 plot([nanmean(perEr_IL_IL) nanmean(perEr_IL_IL)],[0 yLims(2)],'k--', 'linewidth',3);
 title('EL:ER Error')
-xlim([-7.5 7.5])
 
 
 subplot(2,2,4);
-[n,x] = hist2Stair(perEr_IR_IR,[-10:0.25:10],'k');
+[n,x] = hist2Stair(perEr_IR_IR,[-5:0.05:5],'k');
 yLims = get(gca,'YLim');
 hold on;
 plot([nanmean(perEr_IR_IR) nanmean(perEr_IR_IR)],[0 yLims(2)],'k--', 'linewidth',3);
 title('ER:EL Error')
-xlim([-7.5 7.5])
 
 
 
@@ -492,7 +432,7 @@ xlim([-7.5 7.5])
 
 
 
-
+%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % function section
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -522,10 +462,10 @@ end
 
 
 
-function y = Peval(x,p,deg)
+function y = Peval(x,p)
     y = 0;
-    for k = 1:deg
-        y = y + p(k) * x^((deg-1)-k);
+    for k = 1:8
+        y = y + p(k) * x^(8-k);
     end
     %y = p(1)*x^7 + p(2)*x^6 +p(3)*x^5 +p(4)*x^4 +p(5)*x^3 +p(6)*x^2 +p(7)*x +p(8);
 end
@@ -533,10 +473,10 @@ end
 
 
 
-function y = dPdx(x,p,deg)
+function y = dPdx(x,p)
     y = 0;
-    for k = 1:(deg-1)
-        y = y + p(k) * (deg-k) * x^((deg-1)-k);
+    for k = 1:7
+        y = y + p(k) * (8-k) * x^(7-k);
     end
 end
 
