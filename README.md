@@ -27,7 +27,7 @@ to simulate 1 trial (default 12 seconds) of activity from a network with tuned, 
 times,ns,times0,ns0,weights,voltageOverTime,bias,connStrength = simTwoPopHemiInputUnpack_WeakCoupleInit(simParams,sysSize,connProbs,taus,v4OU)
 ```
 simulates 1 trial of activity from a network with tuned, disjoint inputs and weak recurrent connections.
-
+<br><br>
 
 ```julia
 times,ns,times0,ns0,weights,voltageOverTime,bias,connStrength = simTwoPopHemiInputUnpack_WeakCoupleInit(simParams,sysSize,connProbs,taus,v4OU)
@@ -40,6 +40,17 @@ times,ns,times0,ns0,weights,synInputPerNeuronOverTime,bias,connStrength = simTwo
 ```
 simulates 1 trial of activity from a network with tuned, disjoint inputs and strong (uniform or clustered) recurrent connections. Change the last argument R to affect the degree of recurrent clustering. R = 1.25 corresponds to a network in which recurrent layer neurons receiving the same tuned input connect with 1.25x the strength as recurrent layer neurons receiving opposite tuned inputs.
 <br><br>
+
+```julia 
+runSimsFrozenGraph(numSims,simParams,sysSize,connProbs,connStrength,taus,v4OU,bias,weights)
+```
+simulates `numSims` trials of activity for a frozen network architecture that was initialized with one of the above functions.
+<br><br>
+
+```julia
+runSimsFrozenGraphLinResp(numSims,simParams,sysSize,connProbs,connStrength,taus,v4OU,bias,weights)
+```
+mirrors the behavior of `runSimsFrozenGraph(numSims,simParams,sysSize,connProbs,connStrength,taus,v4OU,bias,weights)` plus runs an additional 20 trials of activity for a network with the same, frozen input structure and no recurrent connectivity. This is useful for the paper's linear response calculations.   
 
 
 
