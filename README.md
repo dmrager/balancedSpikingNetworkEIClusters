@@ -22,14 +22,12 @@ Julia (v1.5) codes simulate the spiking neural network. Matlab (R2019b) codes an
 - [CSV](https://juliadata.github.io/CSV.jl/stable/index.html)
 - [Parameters](https://github.com/mauro3/Parameters.jl)
 - [BenchmarkTools](https://github.com/JuliaCI/BenchmarkTools.jl)
-<pre>
 
-
-</pre>
+##
 
 - MATLAB (R2019b)
 - [Statistics and Machine Learning Toolbox](https://www.mathworks.com/help/stats/index.html?s_tid=CRUX_lftnav)
-- [Shape Language Modeling] (https://www.mathworks.com/matlabcentral/fileexchange/24443-slm-shape-language-modeling)
+- [Shape Language Modeling](https://www.mathworks.com/matlabcentral/fileexchange/24443-slm-shape-language-modeling)
 
 
 
