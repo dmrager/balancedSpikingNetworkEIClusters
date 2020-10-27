@@ -10,12 +10,12 @@ Julia (v1.5) codes simulate the spiking neural network. Matlab (R2019b) codes an
 
 ## Useage
 
-runsim.jl initalizes multiple Julia processes (one per physical computer core), initializes network parameters, and calls all network simulation functions.
+`runsim.jl` initalizes multiple Julia processes (one per physical computer core), initializes network parameters, and calls all network simulation functions.
 
 Call
-'''julia
+```julia
 times,ns,times0,ns0,weights,bias,connStrength = simTwoPopHemiInputUnpack_NoCoupleInit(simParams,sysSize,connProbs,taus,v4OU)
-'''
+```
 to simulate 1 trial (12 seconds) of activity from a network with tuned, disjoint inputs and no recurrent connections.
 
 Call 
