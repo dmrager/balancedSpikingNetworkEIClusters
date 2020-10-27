@@ -20,7 +20,7 @@ Call
 times,ns,times0,ns0,weights,bias,connStrength = simTwoPopHemiInputUnpack_NoCoupleInit(simParams,sysSize,connProbs,taus,v4OU)
 ```
 to simulate 1 trial (default 12 seconds) of activity from a network with tuned, disjoint inputs and no recurrent connections.
-
+</br>
 ```julia
 times,ns,times0,ns0,weights,voltageOverTime,bias,connStrength = simTwoPopHemiInputUnpack_WeakCoupleInit(simParams,sysSize,connProbs,taus,v4OU)
 ```
