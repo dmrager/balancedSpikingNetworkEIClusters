@@ -1,5 +1,5 @@
 # tunedSNN
-> A two-layer spiking neural network consisting of disjoint, tuned inputs and a layer of recurrently connected neurons containing assemblies that reinforce the input tuning. 
+> A two-layer spiking neural network consisting of discretely tuned, disjoint inputs and a layer of recurrently connected neurons containing assemblies that reinforce the input tuning. 
 
 Layer 1 network activity has two-dimensional shared variance by design, where the two dimensions correspond to 2 different tuned inputs. Recurrent layer network activity has high (>2) dimensional shared variance when recurrent clustering is strong.
 
