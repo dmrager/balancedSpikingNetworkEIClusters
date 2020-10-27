@@ -14,13 +14,14 @@ Julia (v1.5) codes simulate the spiking neural network. Matlab (R2019b) codes an
 1. initalizes multiple Julia processes (one per physical computer core) 
 2. initializes network parameters `simParams`(simulation length in ms),`sysSize` (number of input, recurrent layer E, and recurrent layer I neurons),`connProbs` (network connection probabilities for each celltype pair),`taus`(membrane and synaptic time constants in ms),`v4OU` (strength and timescale of OU process that correlates input layer spiking activity) 
 3. calls all network simulation functions.\
-\
+&nbsp;
 Call
 ```julia
 times,ns,times0,ns0,weights,bias,connStrength = simTwoPopHemiInputUnpack_NoCoupleInit(simParams,sysSize,connProbs,taus,v4OU)
 ```
 to simulate 1 trial (default 12 seconds) of activity from a network with tuned, disjoint inputs and no recurrent connections.\
-\
+
+
 ```julia
 times,ns,times0,ns0,weights,voltageOverTime,bias,connStrength = simTwoPopHemiInputUnpack_WeakCoupleInit(simParams,sysSize,connProbs,taus,v4OU)
 ```
