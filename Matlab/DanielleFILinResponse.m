@@ -128,7 +128,7 @@ everyNeuronGainVectPad = [everyNeuronGainVect zeros(1,4000)];
 %weightMat = load('weights_NoCouple_sig00_7_1_tau0_60_freeze1(1)_1_20_20.csv');
 %weightMat = h5read('weights_09_08_2020_freeze8a1ed1d0-f1bd-11ea-03cb-3d2ca16203c0.h5','/weights');
 
-weightMatStr = 'weights_.*.h5';
+weightMatStr = 'Weights_.*.h5';
 fnamesH5 = dir(fullfile(currentDir,'*.h5'));
 fnamesH5 = {fnamesH5.name}.';
 FIND_H5 = @(str)cellfun(@(c)~isempty(c),regexp(fnamesH5,str,'once'));
@@ -149,7 +149,7 @@ weightMatInput = weightMat(1:5000,5001:end);
  for i = 1:5000%length(idxPosIntoWeights) %Pad
      for j=1:5000%length(idxPosIntoWeights) %Pad
          if i < 4001
-            synScale = 0.27; %0.25;
+            synScale = 0.25; %0.25;
          else
             synScale = 0.15; %0.15;
          end
@@ -207,7 +207,7 @@ covY0VarReplacement = covY0 + diag(diag(covSimState)- diag(covY0));
 
 
 covY = inv(eye(5000)-GainMat) * covY0VarReplacement * inv(eye(5000)-GainMat');
-%covY = covY + diag(NaN(size(covY,1),1) - diag(covY));
+covY = covY + diag(NaN(size(covY,1),1) - diag(covY));
 
 
 %covEst4 = inv(eye(5000)-GainMat)*cov(V4Block)
