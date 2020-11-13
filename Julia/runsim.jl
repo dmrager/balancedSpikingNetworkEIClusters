@@ -67,7 +67,11 @@ end
 end
 
 
-simParams = SimParams(12000);
+#simParams = SimParams(12000);
+
+simParams = SimParams(2000);
+
+
 sysSize = NCount(4000,1000,4000);
 connProbs = ConnProbs(0.2,0.5,0.2,0.5,0.5,0.5);
 taus = TimeConstants(1,3,1,2,15,10,5);
@@ -84,12 +88,13 @@ include("simTwoPopHemiInput.jl")
 include("simTwoPopHemiInput_FreezeConnections_synInput.jl")
 include("runSimsFrozenGraph.jl")
 include("runSimsFrozenGraphLinResp.jl")
+include("currentMethods.jl")
 
 times,ns,times0,ns0,weights,bias,connStrength = simTwoPopHemiInputUnpack_NoCoupleInit(simParams,sysSize,connProbs,taus,v4OU)
 
-times,ns,times0,ns0,weights,voltageOverTime,bias,connStrength = simTwoPopHemiInputUnpack_WeakCoupleInit(simParams,sysSize,connProbs,taus,v4OU)
+times,ns,times0,ns0,weights,synInputPerNeuronOverTime,bias,connStrength, eFFOverTime, eRecOverTime, iRecOverTime = simTwoPopHemiInputUnpack_WeakCoupleInit(simParams,sysSize,connProbs,taus,v4OU)
 
-times,ns,times0,ns0,weights,synInputPerNeuronOverTime,bias,connStrength = simTwoPopHemiInputUnpack_StrongRecSymmClusters(simParams,sysSize,connProbs,taus,v4OU)
+times,ns,times0,ns0,weights,synInputPerNeuronOverTime,bias,connStrength, numInputs = simTwoPopHemiInputUnpack_StrongRecSymmClusters(simParams,sysSize,connProbs,taus,v4OU)
 
 times,ns,times0,ns0,weights,synInputPerNeuronOverTime,bias,connStrength,v4OU = simTwoPopHemiInputUnpack_StrongRecAsymmClusters(simParams,sysSize,connProbs,taus,v4OU)
 

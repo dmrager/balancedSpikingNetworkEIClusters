@@ -152,10 +152,30 @@ function simTwoPopHemiInputWeakRecurrentCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0p
 	forwardInputsEPrev = zeros(NRec) #as above, for previous timestep
 	forwardInputsIPrev = zeros(NRec)
 
+	ffEPrev = zeros(NRec)
+	ffE = zeros(NRec)
+
+	inE = zeros(NRec)
+	inEPrev = zeros(NRec)
+	inEFF = zeros(NRec)
+	inEFFPrev = zeros(NRec)
+	inI = zeros(NRec)
+	inIPrev = zeros(NRec)
+
+	xeriseFF = zeros(NRec)
+	xedecayFF = zeros(NRec)
+
+	xeriseRec = zeros(NRec)
+	xedecayRec = zeros(NRec)
+
+	xiriseRec = zeros(NRec)
+	xidecayRec = zeros(NRec)
+
 	xerise = zeros(NRec) #auxiliary variables for E/I currents (difference of exponentials)
 	xedecay = zeros(NRec)
 	xirise = zeros(NRec)
 	xidecay = zeros(NRec)
+
 	lambda0 = zeros(N0)
 
 	v = rand(NRec) #membrane voltage
@@ -163,14 +183,29 @@ function simTwoPopHemiInputWeakRecurrentCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0p
 	lastSpike = -100*ones(NRec) #time of last spike
 
 	Nsteps = round(Int,T/dt)
-	dSampAmount = 100
+	dSampAmount = 1
 	NSynapticDownsamp = round(Int,Nsteps/dSampAmount)
 
 	synInputPerNeuronOverTime = zeros(NRec,NSynapticDownsamp)
+	eFFOverTime = Array{NamedTuple{(:inCount,:curr),Tuple{Int32,Float64}}}(undef,NRec,NSynapticDownsamp)
+	eRecOverTime = Array{NamedTuple{(:inCount,:curr),Tuple{Int32,Float64}}}(undef,NRec,NSynapticDownsamp)
+	iRecOverTime = Array{NamedTuple{(:inCount,:curr),Tuple{Int32,Float64}}}(undef,NRec,NSynapticDownsamp)
+
+
+	numInputs = zeros(NRec,NSynapticDownsamp)
 	voltageOverTime = zeros(5,NSynapticDownsamp)
 	privNoiseOverTime = zeros(5,NSynapticDownsamp)
 
+	spikeFiredEFF = zeros(NRec)
+	spikeFiredE = zeros(NRec)
+	spikeFiredI = zeros(NRec)
+
+
+	getPSPs = false
+
 	println("starting simulation")
+
+
 
 
 	#begin main simulation loop
@@ -181,6 +216,10 @@ function simTwoPopHemiInputWeakRecurrentCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0p
 		t = dt*ti
 		forwardInputsE[:] .= 0
 		forwardInputsI[:] .= 0
+		ffE[:] .= 0
+		inE[:] .= 0
+		inEFF[:] .= 0
+		inI[:] .= 0
 		#spikingInputs = inputTrains[2,find(inputTrains[1,:] .== t)]
 
 		OUHemi1 = randn();
@@ -197,6 +236,8 @@ function simTwoPopHemiInputWeakRecurrentCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0p
 				times0[c0i,ns0[c0i]] = t
 				for cinputTarget = 1:NRec
 					forwardInputsE[cinputTarget] += weights[cinputTarget,(Ne+Ni+Int(c0i))]
+					ffE[cinputTarget] += weights[cinputTarget,(Ne+Ni+Int(c0i))]
+					inEFF[cinputTarget] += 1
 				end
 			end
 		end
@@ -209,6 +250,9 @@ function simTwoPopHemiInputWeakRecurrentCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0p
 				times0[c0i,ns0[c0i]] = t
 				for cinputTarget = 1:NRec
 					forwardInputsE[cinputTarget] += weights[cinputTarget,(Ne+Ni+Int(c0i))]
+					ffE[cinputTarget] += weights[cinputTarget,(Ne+Ni+Int(c0i))]
+					inEFF[cinputTarget] += 1
+
 				end
 			end
 		end
@@ -225,22 +269,76 @@ function simTwoPopHemiInputWeakRecurrentCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0p
 
 			for ci = 1:NRec
 				#forwardInputsE[ci] += weights[ci,(Ne+Ni+c0i)]
+
+				if getPSPs == true
+
+					if ffEPrev[ci] != 0. && spikeFiredEFF[ci] == 0 #(forwardInputsEPrev[ci] - ffEPrev[ci])
+						addThisEFF = ffEPrev[ci]
+						spikeFiredEFF[ci] = 1
+					else
+						addThisEFF = 0.0
+					end
+
+					if (forwardInputsEPrev[ci] - ffEPrev[ci]) != 0. && spikeFiredE[ci] == 0 #(forwardInputsEPrev[ci] - ffEPrev[ci])
+						addThisE = (forwardInputsEPrev[ci] - ffEPrev[ci])
+						spikeFiredE[ci] = 1
+					else
+						addThisE = 0.0
+					end
+
+					if forwardInputsIPrev[ci] != 0. && spikeFiredI[ci] == 0 #(forwardInputsEPrev[ci] - ffEPrev[ci])
+						addThisI = forwardInputsIPrev[ci]
+						spikeFiredI[ci] = 1
+					else
+						addThisI = 0.0
+					end
+				else
+					addThisEFF = ffEPrev[ci]
+					addThisE = (forwardInputsEPrev[ci] - ffEPrev[ci])
+					addThisI = forwardInputsIPrev[ci]
+				end
+
+				#Isolated FF and Rec Currents
+
+				xeriseFF[ci] += -dt*xeriseFF[ci]/tauerise + addThisEFF
+				xedecayFF[ci] += -dt*xedecayFF[ci]/tauedecay + addThisEFF
+
+				xeriseRec[ci] += -dt*xeriseRec[ci]/tauerise + addThisE
+				xedecayRec[ci] += -dt*xedecayRec[ci]/tauedecay + addThisE
+
+				xiriseRec[ci] += -dt*xiriseRec[ci]/tauirise + addThisI
+				xidecayRec[ci] += -dt*xidecayRec[ci]/tauidecay + addThisI
+
+				#E and I currents for total input current
 				xerise[ci] += -dt*xerise[ci]/tauerise + forwardInputsEPrev[ci]
 				xedecay[ci] += -dt*xedecay[ci]/tauedecay + forwardInputsEPrev[ci]
+
 				xirise[ci] += -dt*xirise[ci]/tauirise + forwardInputsIPrev[ci]
 				xidecay[ci] += -dt*xidecay[ci]/tauidecay + forwardInputsIPrev[ci]
 
 				synInput = (xedecay[ci] - xerise[ci])/(tauedecay - tauerise) + (xidecay[ci] - xirise[ci])/(tauidecay - tauirise)
 
+				if mod(ti,dSampAmount) == 0
+
+					synInputPerNeuronOverTime[ci,Int(ti/dSampAmount)] = tau[ci] * synInput
+					eFFOverTime[ci,Int(ti/dSampAmount)] = (inCount = Int(inEFFPrev[ci]) , curr = tau[ci] * ((xedecayFF[ci] - xeriseFF[ci])/(tauedecay - tauerise)))
+					eRecOverTime[ci,Int(ti/dSampAmount)] = (inCount = Int(inEPrev[ci]) , curr = tau[ci] * ((xedecayRec[ci] - xeriseRec[ci])/(tauedecay - tauerise)))
+					iRecOverTime[ci,Int(ti/dSampAmount)] = (inCount = Int(inIPrev[ci]) , curr = tau[ci] * ((xidecayRec[ci] - xiriseRec[ci])/(tauidecay - tauirise)))
+
+					#eFFNumInputs[ci,Int(ti/dSampAmount)] = inEFFPrev[ci]
+					#eRecNumInputs[ci,Int(ti/dSampAmount)] = inERecPrev[ci]
+					#eRecNumInputs[ci,Int(ti/dSampAmount)] = inERecPrev[ci]
+
+				end
+
+
+
 				if t > (lastSpike[ci] + refrac)  #not in refractory period
 					v[ci] += dt*((1/tau[ci])*(mu[ci]-v[ci]) + synInput) + (sigPriv * sqrt(dt/tau[ci]) * randn());
 
-					if mod(ti,dSampAmount) == 0
-						if ci < 6
-							voltageOverTime[ci,Int(ti/dSampAmount)] = v[ci]
-							privNoiseOverTime[ci,Int(ti/dSampAmount)] = (sigPriv * sqrt(dt/tau[ci]) * randn())
-						end
-					end
+
+
+
 
 					if v[ci] > thresh[ci]  #spike occurred
 						v[ci] = vre
@@ -253,8 +351,10 @@ function simTwoPopHemiInputWeakRecurrentCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0p
 						for j = 1:NRec
 							if weights[j,ci] > 0  #E synapse
 								forwardInputsE[j] += weights[j,ci]
+								inE[j] += 1
 							elseif weights[j,ci] < 0  #I synapse
 								forwardInputsI[j] += weights[j,ci]
+								inI[j] += 1
 							end
 						end #end loop over synaptic projections
 					end #end if(spike occurred)
@@ -263,13 +363,19 @@ function simTwoPopHemiInputWeakRecurrentCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0p
 
 		forwardInputsEPrev = copy(forwardInputsE)
 		forwardInputsIPrev = copy(forwardInputsI)
+
+		ffEPrev = copy(ffE)
+		inEPrev = copy(inE)
+		inEFFPrev = copy(inEFF)
+		inIPrev = copy(inI)
+
 	end #end loop over time
 	@printf("\r")
 
 	times = times[:,1:maximum(ns)]
 	times0 = times0[:,1:maximum(ns0)]
 
-	return times,ns,times0,ns0,weights,voltageOverTime
+	return times,ns,times0,ns0,weights,synInputPerNeuronOverTime,eFFOverTime, eRecOverTime, iRecOverTime
 end
 
 function simTwoPopHemiInputUnpack_WeakCoupleInit(simParams,sysSize,connProbs,taus,v4OU)
@@ -301,8 +407,8 @@ function simTwoPopHemiInputUnpack_WeakCoupleInit(simParams,sysSize,connProbs,tau
 	N0pop = Int(N0/2)
 
 	#Juno.@enter simTwoPopHemiInputWeakRecurrentCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR, q, recScaling, ffScaling, connProbs)
-	times,ns,times0,ns0,weights,voltageOverTime = simTwoPopHemiInputWeakRecurrentCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR, q, recScaling, ffScaling, connProbs, bias)
-	return times,ns,times0,ns0,weights,voltageOverTime,bias,connStrength
+	times,ns,times0,ns0,weights,synInputPerNeuronOverTime,eFFOverTime, eRecOverTime, iRecOverTime = simTwoPopHemiInputWeakRecurrentCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR, q, recScaling, ffScaling, connProbs, bias)
+	return times,ns,times0,ns0,weights,synInputPerNeuronOverTime,bias,connStrength,eFFOverTime, eRecOverTime, iRecOverTime
 
 
 end

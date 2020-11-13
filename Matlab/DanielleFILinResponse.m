@@ -209,13 +209,8 @@ covY0VarReplacement = covY0 + diag(diag(covSimState)- diag(covY0));
 covY = inv(eye(5000)-GainMat) * covY0VarReplacement * inv(eye(5000)-GainMat');
 covY = covY + diag(NaN(size(covY,1),1) - diag(covY));
 
-
-%covEst4 = inv(eye(5000)-GainMat)*cov(V4Block)
-
-%covEst2 = inv(eye(length(idxPosIntoWeights))-GainMat) * (V4Block*V4Block'.*(1/length(idxPosIntoWeights))) * inv(eye(length(idxPosIntoWeights))-GainMat');
-
-
-%[COEFF,latent,explained] = pcacov(corrEst);
+LHS = (eye(5000)-GainMat) * covSimState * (eye(5000)-GainMat);
+RHS = GainMat * covY0VarReplacement * GainMat';
 
 
 covSimState = covSimState + diag(NaN(size(covSimState,1),1) - diag(covSimState));
