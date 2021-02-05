@@ -29,11 +29,6 @@ times,ns,times0,ns0,weights,voltageOverTime,bias,connStrength = simTwoPopHemiInp
 simulates 1 trial of activity from a network with tuned, disjoint inputs and weak recurrent connections.
 <br><br><br>
 
-```julia
-times,ns,times0,ns0,weights,voltageOverTime,bias,connStrength = simTwoPopHemiInputUnpack_WeakCoupleInit(simParams,sysSize,connProbs,taus,v4OU)
-```
-simulates 1 trial of activity from a network with tuned, disjoint inputs and weak recurrent connections.
-<br><br><br>
 
 ```julia
 times,ns,times0,ns0,weights,synInputPerNeuronOverTime,bias,connStrength = simTwoPopHemiInputUnpack_StrongRecSymmClusters(simParams,sysSize,connProbs,taus,v4OU,R)
