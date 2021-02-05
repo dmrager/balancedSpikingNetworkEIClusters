@@ -33,7 +33,7 @@ simulates 1 trial of activity from a network with tuned, disjoint inputs and wea
 ```julia
 times,ns,times0,ns0,weights,synInputPerNeuronOverTime,bias,connStrength = simTwoPopHemiInputUnpack_StrongRecSymmClusters(simParams,sysSize,connProbs,taus,v4OU)
 ```
-simulates 1 trial of activity from a network with tuned, disjoint inputs and strong (uniform or clustered) recurrent connections. Within the `simTwoPopHemiInputUnpack_StrongRecSymmClusters` method, you can change R, the clustering strength of the recurrent architecture. R = 1.25 corresponds to a network in which recurrent layer neurons receiving the same tuned input connect with 1.25x the strength as recurrent layer neurons receiving opposite tuned inputs. R is the 2nd argument in the `ConnStrength` constructor. Upcoming versions of the code base will make R accessible as an argument to `simTwoPopHemiInputUnpack_StrongRecSymmClusters`.
+simulates 1 trial of activity from a network with tuned, disjoint inputs and strong (uniform or clustered) recurrent connections. Within the `simTwoPopHemiInputUnpack_StrongRecSymmClusters` method, you can change R, the clustering strength of the recurrent architecture. R = 1.25 corresponds to a network in which recurrent layer neurons receiving the same tuned input connect with 1.25x the strength as recurrent layer neurons receiving opposite tuned inputs. R is the 2nd argument in the `ConnStrength` constructor. Upcoming versions of the code base will make the R parameter accessible as an argument to `simTwoPopHemiInputUnpack_StrongRecSymmClusters`.
 <br><br><br>
 
 ```julia 
