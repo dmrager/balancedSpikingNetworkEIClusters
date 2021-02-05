@@ -1,7 +1,3 @@
-#this file is part of litwin-kumar_doiron_cluster_2012
-#Copyright (C) 2014 Ashok Litwin-Kumar
-#see README for more information
-
 
 function simTwoPopHemiInputWeakRecurrentCoupling(T,Ne,Ni,N0,K,KI,Nepop,Nipop,N0pop,tauerise,tauedecay,tauirise,tauidecay,taue,taui, sigma0, JR, q, recScaling, ffScaling, connProbs, bias)
 
